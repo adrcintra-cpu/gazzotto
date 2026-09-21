@@ -19,7 +19,7 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
         <h1 class="cine__title" id="hero-title"><span>GAZZOTTO BBQ.</span> O verdadeiro churrasco na parrilla, onde você estiver.</h1>
         <div class="cine__rest" id="cine-rest">
           <p>Na Gazzotto BBQ, churrasco é mais do que comida: é experiência. Levamos até você o sabor marcante da parrilla com cortes selecionados, preparo ao vivo e aquele clima que transforma qualquer encontro em um momento memorável.</p>
-          <a class="cine__cta" href="#contato">Quero entender meu diagnóstico <i><Icon name="arrow" size={18} /></i></a>
+          <a class="cine__cta" href="#contato">Quero em meu evento! <i><Icon name="arrow" size={18} /></i></a>
         </div>
       </div>
     </div>
@@ -44,7 +44,7 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
               linear-gradient(0deg, rgb(20 21 24 / .55), transparent 40%); }
 .cine__copy { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; pointer-events: none; }
 .cine__copy .wrap { pointer-events: none; }
-.cine__title { font: 700 clamp(2.1rem, 5.4vw, 4.6rem)/1.12 var(--font-display, "Oswald", sans-serif); color: var(--fish, #f2d7ad);
+.cine__title { font: 700 clamp(2.6rem, 6vw, 5.2rem)/1.05 var(--font-display, "Oswald", sans-serif); color: var(--fish, #f2d7ad);
   max-width: 15ch; transform-origin: 18% 60%; will-change: transform, filter, opacity; text-wrap: balance; }
 .cine__title span { display: block; }
 .cine__rest { margin-top: 2rem; will-change: transform, filter, opacity; }
@@ -54,6 +54,8 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
   font-weight: 500; font-size: clamp(.85rem, 1.2vw, 1rem); box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
 .cine__cta i { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 6px; background: var(--fish, #f2d7ad); color: var(--barbecue, #3c1518); }
 .cine__cta:hover { filter: brightness(1.08); }
+/* Celular: o scroll do vídeo dura mais (mais rolagem para percorrer os quadros) */
+@media (max-width: 768px) { .cine { height: 420vh; } }
 @media (prefers-reduced-motion: reduce) { .cine { height: 100vh; height: 100dvh; } }
 </style>
 

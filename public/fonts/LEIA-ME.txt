@@ -1,3 +1,6 @@
 Fonte dos títulos: Cloudy Bumpy (Ardyanatypes) — CloudyBumpy.ttf.
 Licença: uso pessoal gratuito; uso comercial exige licença do designer.
 Para converter em woff2 (menor): npx ttf2woff2 < CloudyBumpy.ttf > CloudyBumpy.woff2 e ajuste o @font-face em src/styles/global.css.
+
+Fonte dos títulos atual: Kenyan Coffee (Khurasan). Coloque aqui o arquivo como KenyanCoffee.ttf (ou KenyanCoffee.otf).
+Baixe em dafont.com (uso pessoal gratuito; uso comercial exige licença do designer). Sem o arquivo, o site usa a Cloudy Bumpy.

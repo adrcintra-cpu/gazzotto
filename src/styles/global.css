@@ -1,4 +1,12 @@
-/* Fonte dos títulos: Cloudy Bumpy (Ardyanatypes) — arquivo em public/fonts/.
+/* Fonte dos títulos: Kenyan Coffee (Khurasan) — coloque o arquivo em public/fonts/KenyanCoffee.ttf (ou .otf).
+   Enquanto o arquivo não existir, o navegador usa a Cloudy Bumpy e depois a Oswald. */
+@font-face {
+  font-family: "Kenyan Coffee";
+  src: local("Kenyan Coffee"), local("Kenyan Coffee Rg"), local("KenyanCoffee-Regular"),
+       url("/fonts/KenyanCoffee.ttf") format("truetype"), url("/fonts/KenyanCoffee.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+/* (fonte anterior) Cloudy Bumpy (Ardyanatypes) — arquivo em public/fonts/.
    Reserva: Oswald. (Os acentos do português são compostos pelo navegador com as marcas da própria fonte.) */
 @font-face {
   font-family: "Cloudy Bumpy";
@@ -29,7 +37,7 @@
   --red: var(--burger);
   --text: var(--fish);
   --muted: color-mix(in srgb, var(--fish) 68%, var(--bg));
-  --font-display: "Cloudy Bumpy", "Oswald", "Arial Narrow", Impact, sans-serif;
+  --font-display: "Kenyan Coffee", "Cloudy Bumpy", "Oswald", "Arial Narrow", Impact, sans-serif;
   --font-body: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
   --wrap: 1120px;
 }
@@ -265,3 +273,36 @@ body::before, .events::before, .story::before, .gallery::before, .footer::before
 .h2, .events h2, .perk h3, .diff h3, .menu__front h3, .menu__back h3, .tagline, .cine__title, .sv__title {
   font-family: var(--font-display); font-weight: 400; font-synthesis: none;
 }
+
+/* Títulos maiores (Kenyan Coffee) */
+.h2 { font-size: clamp(2.3rem, 5.2vw, 3.6rem); line-height: 1.1; }
+.tagline { font-size: clamp(1.7rem, 3.8vw, 2.6rem); line-height: 1.2; }
+.events h2 { font-size: clamp(2.4rem, 5.2vw, 3.8rem); line-height: 1.08; }
+.perk h3 { font-size: 1.45rem; line-height: 1.15; }
+.diff h3 { font-size: 1.4rem; line-height: 1.15; }
+.menu__front h3 { font-size: 1.9rem; line-height: 1.1; letter-spacing: .02em; }
+.menu__back h3 { font-size: 1.5rem; line-height: 1.1; letter-spacing: .02em; }
+
+/* WhatsApp flutuante */
+.wa-float { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 30; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; padding: 0; border-radius: 50%; background: #25d366; color: #fff; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / .35); transition: transform .2s, box-shadow .2s; }
+.wa-float:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 12px 30px rgb(0 0 0 / .45); }
+.wa-float svg { flex: none; }
+.wa-float__tip { position: absolute; right: calc(100% + .7rem); top: 50%; transform: translateY(-50%); padding: .45rem .8rem; border-radius: 999px; background: rgb(20 21 24 / .92); color: var(--fish); font: 600 .85rem var(--font-body); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.wa-float:hover .wa-float__tip, .wa-float:focus-visible .wa-float__tip { opacity: 1; }
+.wa-float::before { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0 rgb(37 211 102 / .55); animation: wa-pulse 2.4s infinite; pointer-events: none; }
+@keyframes wa-pulse { 70% { box-shadow: 0 0 0 16px rgb(37 211 102 / 0); } 100% { box-shadow: 0 0 0 0 rgb(37 211 102 / 0); } }
+@media (prefers-reduced-motion: reduce) { .wa-float::before { animation: none; } .wa-float { transition: none; } }
+@media (max-width: 520px) { .wa-float { right: .9rem; bottom: .9rem; } }
+
+/* Cards de vantagens (abaixo do banner): efeitos de hover */
+.perk { overflow: hidden; cursor: default; transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .3s, box-shadow .35s, background-color .35s; }
+.perk::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--burger); transform: scaleX(0); transform-origin: left; transition: transform .45s cubic-bezier(.2, .7, .2, 1); pointer-events: none; }
+.perk svg { transition: transform .4s cubic-bezier(.2, .7, .2, 1), background-color .3s, color .3s, border-color .3s; }
+.perk h3 { transition: color .3s, transform .35s cubic-bezier(.2, .7, .2, 1); }
+.perk p { transition: color .3s, transform .35s cubic-bezier(.2, .7, .2, 1); }
+.perk:hover, .perk:focus-within { transform: translateY(-8px); border-color: rgb(216 48 48 / .7); background-color: #34363d; box-shadow: 0 18px 36px rgb(0 0 0 / .4), 0 0 0 1px rgb(216 48 48 / .25), 0 10px 40px rgb(216 48 48 / .18); }
+.perk:hover::after, .perk:focus-within::after { transform: scaleX(1); }
+.perk:hover svg, .perk:focus-within svg { background: var(--burger); color: #fff; border-color: transparent; transform: rotate(-8deg) scale(1.12); }
+.perk:hover h3, .perk:focus-within h3 { color: #fff; transform: translateX(4px); }
+.perk:hover p, .perk:focus-within p { color: var(--fish); transform: translateX(4px); }
+@media (prefers-reduced-motion: reduce) { .perk, .perk svg, .perk h3, .perk p, .perk::after { transition: none; } .perk:hover, .perk:focus-within { transform: none; } }
