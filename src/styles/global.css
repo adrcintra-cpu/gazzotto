@@ -1,16 +1,22 @@
-/* Fonte dos títulos: Kenyan Coffee (Khurasan) — coloque o arquivo em public/fonts/KenyanCoffee.ttf (ou .otf).
-   Enquanto o arquivo não existir, o navegador usa a Cloudy Bumpy e depois a Oswald. */
+/* Fonte dos títulos: Kenyan Coffee (Khurasan) — arquivos em public/fonts/ (Regular e Bold).
+   Reserva: Cloudy Bumpy e depois Oswald. */
 @font-face {
   font-family: "Kenyan Coffee";
-  src: local("Kenyan Coffee"), local("Kenyan Coffee Rg"), local("KenyanCoffee-Regular"),
-       url("/fonts/KenyanCoffee.ttf") format("truetype"), url("/fonts/KenyanCoffee.otf") format("opentype");
+  src: local("Kenyan Coffee Rg"), local("KenyanCoffeeRg-Regular"),
+       url("/fonts/KenyanCoffee.ttf?v=4") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Kenyan Coffee";
+  src: local("Kenyan Coffee Rg Bold"), local("KenyanCoffeeRg-Bold"),
+       url("/fonts/KenyanCoffee-Bold.ttf?v=4") format("truetype");
+  font-weight: 700; font-style: normal; font-display: swap;
 }
 /* (fonte anterior) Cloudy Bumpy (Ardyanatypes) — arquivo em public/fonts/.
    Reserva: Oswald. (Os acentos do português são compostos pelo navegador com as marcas da própria fonte.) */
 @font-face {
   font-family: "Cloudy Bumpy";
-  src: local("Cloudy Bumpy"), url("/fonts/CloudyBumpy.ttf") format("truetype");
+  src: local("Cloudy Bumpy"), url("/fonts/CloudyBumpy.ttf?v=3") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
 }
 
