@@ -13,6 +13,7 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
     <video id="cine-v1" class="cine__video" src={VIDEO_1} autoplay muted loop playsinline preload="auto" aria-hidden="true" tabindex="-1"></video>
     <div class="cine__shade" id="cine-shade"></div>
     <video id="cine-v2" class="cine__video cine__video--2" src={VIDEO_2} muted playsinline preload="auto" aria-hidden="true" tabindex="-1"></video>
+    <canvas id="cine-hold" class="cine__hold" aria-hidden="true"></canvas>
     <div class="cine__copy">
       <div class="wrap">
         <h1 class="cine__title" id="hero-title"><span>GAZZOTTO BBQ.</span> O verdadeiro churrasco na parrilla, onde você estiver.</h1>
@@ -37,6 +38,7 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
 .cine__stage { position: sticky; top: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: #000; }
 .cine__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; will-change: opacity, transform; pointer-events: none; }
 .cine__video--2 { opacity: 0; }
+.cine__hold { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; }
 .cine__shade { position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(90deg, rgb(20 21 24 / .72) 0%, rgb(20 21 24 / .38) 55%, rgb(20 21 24 / .12) 100%),
               linear-gradient(0deg, rgb(20 21 24 / .55), transparent 40%); }
@@ -87,6 +89,33 @@ if (reduced) {
   function prime() { if (primed) return; primed = true; var p = v2.play(); if (p && p.then) p.then(function () { v2.pause(); }).catch(function () {}); }
   function kick() { if (!rafId) rafId = requestAnimationFrame(tick); }
 
+  // Tela de segurança: cada quadro concluído do Vídeo 2 é copiado para um canvas que fica por cima.
+  // Enquanto o navegador (Safari) busca outro quadro e deixa o <video> preto, o canvas mantém o último quadro bom.
+  var hold = document.getElementById("cine-hold"), hctx = hold.getContext("2d");
+  function paint() {
+    if (v2.seeking || v2.readyState < 2 || !v2.videoWidth) return;
+    if (hold.width !== v2.videoWidth) { hold.width = v2.videoWidth; hold.height = v2.videoHeight; }
+    try { hctx.drawImage(v2, 0, 0, hold.width, hold.height); } catch (e) {}
+  }
+  v2.addEventListener("seeked", paint);
+  v2.addEventListener("loadeddata", paint);
+
+  // Baixa o Vídeo 2 inteiro para a memória (blob) e troca a fonte enquanto ele ainda está invisível.
+  // Assim o scrub nunca depende da rede: sem quadro preto/travado ao buscar trechos ainda não carregados.
+  var blobUrl = null, swapped = false;
+  function trySwap() {
+    if (!blobUrl || swapped || fade > 0) return;
+    swapped = true; primed = false; currentTime = 0;
+    v2.addEventListener("loadedmetadata", function () { onMeta(); }, { once: true });
+    v2.src = blobUrl; v2.load();
+  }
+  try {
+    fetch(v2.currentSrc || v2.src, { mode: "cors" })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.blob(); })
+      .then(function (b) { blobUrl = URL.createObjectURL(b); trySwap(); })
+      .catch(function () {});
+  } catch (e) {}
+
   // Título: cresce, ganha blur + distorção (turbulência) e se dissolve como fumaça.
   function applySmoke(y) {
     var p = Math.min(Math.max(y / smokePx, 0), 1);
@@ -111,7 +140,8 @@ if (reduced) {
   function compute() {
     var y = Math.min(Math.max(scrollY - sectionTop, 0), range);
     var f = Math.min(y / fadePx, 1);
-    if (f !== fade) { fade = f; v1.style.opacity = String(1 - f); v2.style.opacity = String(f); }
+    if (f !== fade) { fade = f; v1.style.opacity = String(1 - f); v2.style.opacity = String(f); hold.style.opacity = String(f); }
+    if (blobUrl && !swapped && f === 0) trySwap();
     if (f > 0) prime();
     if (f >= 1) { if (!v1.paused) v1.pause(); } else if (v1.paused) { v1.play().catch(function () {}); }
     applySmoke(y);
@@ -125,7 +155,7 @@ if (reduced) {
     var diff = targetTime - currentTime;
     if (Math.abs(diff) < EPS) currentTime = targetTime;
     else { currentTime += diff * LERP; if (Math.abs(targetTime - currentTime) < 0.008) currentTime = targetTime; }
-    if (!v2.seeking && Math.abs(v2.currentTime - currentTime) > EPS) v2.currentTime = currentTime >= duration - 0.008 ? duration : currentTime;
+    if (!v2.seeking && Math.abs(v2.currentTime - currentTime) > EPS) v2.currentTime = Math.min(currentTime, Math.max(duration - 0.06, 0));
     if (Math.abs(targetTime - currentTime) > EPS || v2.seeking) kick();
   }
   v2.addEventListener("loadedmetadata", onMeta, { once: true });

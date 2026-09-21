@@ -12,7 +12,7 @@ const cta = contact.whatsapp
   ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Olá! Quero um orçamento com a Gazzotto BBQ.")}`
   : "#contato";
 
-const aboutSrc = cld(media.aboutVideo);
+const aboutSrc = media.aboutVideo; // URL exata, sem transformação (evita erro de transcodificação do Cloudinary em vídeos grandes)
 const aboutPoster = media.aboutPoster || cldPoster(media.aboutVideo);
 
 const perks = [
@@ -49,10 +49,14 @@ const socials = [
   title="Gazzotto BBQ | O verdadeiro churrasco na parrilla, onde você estiver"
   description="Churrasco na parrilla para eventos corporativos, casamentos, aniversários e confraternizações. Cortes selecionados, preparo ao vivo e experiência completa."
 >
-  <header class="header">
+  <header class="header" id="header">
     <div class="wrap">
       <a class="header__logo" href="#topo" aria-label="Gazzotto BBQ — início"><Logo /></a>
-      <a class="btn" href={cta}>Quero um orçamento</a>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="#topo">Início</a><a href="#eventos">Eventos</a><a href="#cardapios">Cardápios</a><a href="#diferenciais">Diferenciais</a><a href="#contato">Contato</a>
+      </nav>
+      <a class="btn header__cta" href={cta}>Quero um orçamento</a>
+      <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </header>
 
@@ -69,7 +73,7 @@ const socials = [
       <p class="quote" data-scrub>Acreditamos que um bom churrasco começa na escolha da carne e termina na lembrança que ele deixa.</p>
     </div>
 
-    <section class="events" aria-labelledby="eventos-title">
+    <section class="events" id="eventos" aria-labelledby="eventos-title">
       <div class="wrap">
         <div class="events__art">
           {media.mascot && <img src={cld(media.mascot)} alt="Mascote touro da Gazzotto BBQ com o polegar para cima" width="600" height="900" loading="lazy" decoding="async" />}
@@ -84,7 +88,7 @@ const socials = [
       </div>
     </section>
 
-    <section class="menus" aria-labelledby="cardapios-title">
+    <section class="menus" id="cardapios" aria-labelledby="cardapios-title">
       <div class="wrap">
         <h2 class="h2" id="cardapios-title">Cardápios</h2>
         <div class="menus__grid">
@@ -124,7 +128,7 @@ const socials = [
     <section class="about" aria-label="Vídeo institucional">
       <div class="fullvideo">
         {aboutSrc
-          ? <video id="about-video" src={aboutSrc} poster={aboutPoster || undefined} autoplay muted loop playsinline preload="metadata" aria-label="Vídeo institucional da Gazzotto BBQ"></video>
+          ? <video id="about-video" src={aboutSrc} poster={aboutPoster || undefined} autoplay muted loop playsinline preload="auto" aria-label="Vídeo institucional da Gazzotto BBQ"></video>
           : <div class="fullvideo__empty">Vídeo institucional (link do Cloudinary pendente)</div>}
         {aboutSrc && (
           <div class="fullvideo__vol" id="about-vol">
@@ -137,7 +141,7 @@ const socials = [
       </div>
     </section>
 
-    <section class="diffs" aria-labelledby="dif-title">
+    <section class="diffs" id="diferenciais" aria-labelledby="dif-title">
       <div class="wrap">
         <h2 class="h2" id="dif-title">Nosso diferencial</h2>
         <div class="diffs__grid">
@@ -192,6 +196,19 @@ const socials = [
     </div>
     <div class="footer__bottom"><div class="wrap">© Gazzotto 2026 | Todos os direitos reservados</div></div>
   </footer>
+
+  <script is:inline>
+    // Menu: fica sólido ao rolar; no celular abre/fecha o painel.
+    (function () {
+      var h = document.getElementById("header"), t = document.getElementById("nav-toggle");
+      function onScroll() { h.classList.toggle("is-solid", scrollY > 40); }
+      addEventListener("scroll", onScroll, { passive: true }); onScroll();
+      function setOpen(o) { h.classList.toggle("is-open", o); t.setAttribute("aria-expanded", String(o)); t.setAttribute("aria-label", o ? "Fechar menu" : "Abrir menu"); }
+      t.addEventListener("click", function () { setOpen(!h.classList.contains("is-open")); });
+      document.getElementById("nav").addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+      addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+    })();
+  </script>
 
   <script is:inline>
     // Vídeo institucional: toca sozinho (mudo) ao entrar na tela e pausa ao sair. Botão liga/desliga o som.
