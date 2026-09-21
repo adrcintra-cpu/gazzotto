@@ -1,0 +1,3 @@
+Fonte dos títulos: Cloudy Bumpy (Ardyanatypes) — CloudyBumpy.ttf.
+Licença: uso pessoal gratuito; uso comercial exige licença do designer.
+Para converter em woff2 (menor): npx ttf2woff2 < CloudyBumpy.ttf > CloudyBumpy.woff2 e ajuste o @font-face em src/styles/global.css.

@@ -1,0 +1,141 @@
+---
+/**
+ * Hero cinematográfico: Vídeo 1 em loop com o texto de abertura → ao rolar, o título cresce e
+ * vira fumaça enquanto ocorre o crossfade → Vídeo 2 controlado 100% pelo scroll (frame a frame).
+ * Os URLs do Cloudinary são usados exatamente como fornecidos (sem transformações).
+ */
+import Icon from "./Icon.astro";
+const VIDEO_1 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/1_mgxlfe.mp4";
+const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_xurarw.mp4";
+---
+<section class="cine" id="cine" aria-labelledby="hero-title">
+  <div class="cine__stage">
+    <video id="cine-v1" class="cine__video" src={VIDEO_1} autoplay muted loop playsinline preload="auto" aria-hidden="true" tabindex="-1"></video>
+    <div class="cine__shade" id="cine-shade"></div>
+    <video id="cine-v2" class="cine__video cine__video--2" src={VIDEO_2} muted playsinline preload="auto" aria-hidden="true" tabindex="-1"></video>
+    <div class="cine__copy">
+      <div class="wrap">
+        <h1 class="cine__title" id="hero-title"><span>GAZZOTTO BBQ.</span> O verdadeiro churrasco na parrilla, onde você estiver.</h1>
+        <div class="cine__rest" id="cine-rest">
+          <p>Na Gazzotto BBQ, churrasco é mais do que comida: é experiência. Levamos até você o sabor marcante da parrilla com cortes selecionados, preparo ao vivo e aquele clima que transforma qualquer encontro em um momento memorável.</p>
+          <a class="cine__cta" href="#contato">Quero entender meu diagnóstico <i><Icon name="arrow" size={18} /></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <filter id="smoke" x="-25%" y="-50%" width="150%" height="200%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.007 0.018" numOctaves="2" seed="7" result="noise" />
+      <feDisplacementMap id="smoke-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+</section>
+<noscript><style>.cine { height: 100vh; height: 100dvh; }</style></noscript>
+
+<style is:global>
+.cine { position: relative; height: 205vh; background: #000; }
+.cine__stage { position: sticky; top: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: #000; }
+.cine__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; will-change: opacity, transform; pointer-events: none; }
+.cine__video--2 { opacity: 0; }
+.cine__shade { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgb(20 21 24 / .72) 0%, rgb(20 21 24 / .38) 55%, rgb(20 21 24 / .12) 100%),
+              linear-gradient(0deg, rgb(20 21 24 / .55), transparent 40%); }
+.cine__copy { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; pointer-events: none; }
+.cine__copy .wrap { pointer-events: none; }
+.cine__title { font: 700 clamp(2.1rem, 5.4vw, 4.6rem)/1.12 var(--font-display, "Oswald", sans-serif); color: var(--fish, #f2d7ad);
+  max-width: 15ch; transform-origin: 18% 60%; will-change: transform, filter, opacity; text-wrap: balance; }
+.cine__title span { display: block; }
+.cine__rest { margin-top: 2rem; will-change: transform, filter, opacity; }
+.cine__rest p { max-width: 46ch; font-size: clamp(.9rem, 1.35vw, 1.1rem); line-height: 1.5; color: var(--fish, #f2d7ad); }
+.cine__cta { pointer-events: auto; margin-top: 1.8rem; display: inline-flex; align-items: center; gap: 2.2rem; padding: .4rem .4rem .4rem 1.6rem;
+  border-radius: 8px; background: var(--burger, #d83030); color: #fff; text-decoration: none;
+  font-weight: 500; font-size: clamp(.85rem, 1.2vw, 1rem); box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
+.cine__cta i { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 6px; background: var(--fish, #f2d7ad); color: var(--barbecue, #3c1518); }
+.cine__cta:hover { filter: brightness(1.08); }
+@media (prefers-reduced-motion: reduce) { .cine { height: 100vh; height: 100dvh; } }
+</style>
+
+<script>
+(function () {
+var section = document.getElementById("cine"), v1 = document.getElementById("cine-v1"), v2 = document.getElementById("cine-v2");
+var title = document.getElementById("hero-title"), rest = document.getElementById("cine-rest"), smokeMap = document.getElementById("smoke-map");
+var hud = document.getElementById("hud");
+var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---- Parâmetros ------------------------------------------------------------
+var LERP = 0.18;       // suavização do Vídeo 2
+var FADE_VH = 0.35;    // crossfade V1→V2 nos primeiros 35% de 1 viewport de scroll
+var SMOKE_VH = 0.6;    // título vira fumaça ao longo dos primeiros 60% de 1 viewport
+var EPS = 0.001;
+
+var smooth = function (a, b, x) { var t = Math.min(Math.max((x - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
+
+if (reduced) {
+  v1.removeAttribute("autoplay");
+  v1.pause();
+} else {
+  var duration = 0, targetTime = 0, currentTime = 0, rafId = 0, fade = 0, primed = false;
+  var sectionTop = 0, range = 1, fadePx = 1, smokePx = 1, prog = 0, smokeP = -1;
+
+  function measure() {
+    sectionTop = section.getBoundingClientRect().top + scrollY;
+    range = Math.max(1, section.offsetHeight - innerHeight);
+    fadePx = Math.max(1, innerHeight * FADE_VH);
+    smokePx = Math.max(1, innerHeight * SMOKE_VH);
+  }
+  function onMeta() { if (v2.readyState >= 1 && isFinite(v2.duration)) { duration = v2.duration; compute(); } }
+  function prime() { if (primed) return; primed = true; var p = v2.play(); if (p && p.then) p.then(function () { v2.pause(); }).catch(function () {}); }
+  function kick() { if (!rafId) rafId = requestAnimationFrame(tick); }
+
+  // Título: cresce, ganha blur + distorção (turbulência) e se dissolve como fumaça.
+  function applySmoke(y) {
+    var p = Math.min(Math.max(y / smokePx, 0), 1);
+    if (p === smokeP) return;
+    smokeP = p;
+    if (p === 0) {
+      title.style.transform = title.style.filter = title.style.opacity = "";
+      rest.style.transform = rest.style.filter = rest.style.opacity = "";
+      return;
+    }
+    var e = Math.pow(p, 1.25);
+    title.style.transform = "translate3d(0," + (-6 * p) + "vh,0) scale(" + (1 + 1.15 * e) + ")";
+    title.style.filter = "url(#smoke) blur(" + (26 * e).toFixed(1) + "px)";
+    title.style.opacity = String(1 - smooth(0.3, 1, p));
+    smokeMap.setAttribute("scale", String(Math.round(170 * e)));
+    var r = Math.min(p / 0.5, 1);
+    rest.style.transform = "translate3d(0," + (-28 * r) + "px,0)";
+    rest.style.filter = "blur(" + (9 * r).toFixed(1) + "px)";
+    rest.style.opacity = String(1 - r);
+  }
+
+  function compute() {
+    var y = Math.min(Math.max(scrollY - sectionTop, 0), range);
+    var f = Math.min(y / fadePx, 1);
+    if (f !== fade) { fade = f; v1.style.opacity = String(1 - f); v2.style.opacity = String(f); }
+    if (f > 0) prime();
+    if (f >= 1) { if (!v1.paused) v1.pause(); } else if (v1.paused) { v1.play().catch(function () {}); }
+    applySmoke(y);
+    prog = Math.min(Math.max((y - fadePx) / Math.max(1, range - fadePx), 0), 1);
+    targetTime = duration * prog;
+    if (duration) kick();
+    if (hud) hud.textContent = "fade " + fade.toFixed(2) + "\nfumaça " + Math.max(smokeP, 0).toFixed(2) + "\nprogresso " + prog.toFixed(3) + "\nalvo " + targetTime.toFixed(2) + "s\natual " + v2.currentTime.toFixed(2) + "s / " + duration.toFixed(2) + "s";
+  }
+  function tick() {
+    rafId = 0;
+    var diff = targetTime - currentTime;
+    if (Math.abs(diff) < EPS) currentTime = targetTime;
+    else { currentTime += diff * LERP; if (Math.abs(targetTime - currentTime) < 0.008) currentTime = targetTime; }
+    if (!v2.seeking && Math.abs(v2.currentTime - currentTime) > EPS) v2.currentTime = currentTime >= duration - 0.008 ? duration : currentTime;
+    if (Math.abs(targetTime - currentTime) > EPS || v2.seeking) kick();
+  }
+  v2.addEventListener("loadedmetadata", onMeta, { once: true });
+  addEventListener("scroll", compute, { passive: true });
+  addEventListener("resize", function () { measure(); smokeP = -1; compute(); }, { passive: true });
+  addEventListener("load", function () { measure(); compute(); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && fade < 1 && v1.paused) v1.play().catch(function () {}); });
+  var pp = v1.play(); if (pp && pp.catch) pp.catch(function () {});
+  measure(); onMeta(); compute();
+}
+
+})();
+</script>

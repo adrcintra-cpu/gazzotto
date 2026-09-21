@@ -1,0 +1,262 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import Logo from "../components/Logo.astro";
+import CineHero from "../components/CineHero.astro";
+import ScrubVideo from "../components/ScrubVideo.astro";
+import Parallax from "../components/Parallax.astro";
+import TextScrub from "../components/TextScrub.astro";
+import { media, contact, cld, cldPoster } from "../data/media";
+
+const cta = contact.whatsapp
+  ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Olá! Quero um orçamento com a Gazzotto BBQ.")}`
+  : "#contato";
+
+const aboutSrc = cld(media.aboutVideo);
+const aboutPoster = media.aboutPoster || cldPoster(media.aboutVideo);
+
+const perks = [
+  { icon: "cut", t: "Cortes selecionados", d: "Qualidade e sabor em cada preparo." },
+  { icon: "flame", t: "Parrilla ao vivo", d: "A experiência do churrasco sendo feita na sua frente." },
+  { icon: "trophy", t: "Atendimento personalizado", d: "Cada evento pensado de acordo com sua necessidade." },
+  { icon: "thumb", t: "Experiência completa", d: "Mais do que servir carnes: criar momentos." },
+];
+
+const eventos = ["Eventos corporativos", "Aniversários", "Casamentos", "Confraternizações", "Eventos no campo", "Encontros particulares"];
+
+const menus = [
+  { name: "Tradicional Parrilla", icon: "cut", tone: "barbecue", items: ["Chorizo", "Bife Ancho", "Linguiça fina de pernil com queijo e chimichurri", "Medalhão de mandioca", "Choripan artesanal", "Filé de coxa e sobrecoxa na mostarda", "Pão de alho"] },
+  { name: "Premium Experience", icon: "trophy", tone: "chicken", items: ["Picanha", "Chorizo", "Bife Ancho", "Linguiça fina de pernil com queijo e chimichurri", "Medalhão de mandioca", "Choripan artesanal", "Filé de coxa e sobrecoxa na mostarda", "Pão de alho", "Hambúrguer artesanal na parrilla", "Panqueca recheada com doce de leite"] },
+  { name: "Gazzotto BBQ Signature", icon: "flame", tone: "burger", items: ["Picanha", "Chorizo", "Bife Ancho", "Bife Ancho com Gorgonzola", "Costela parrillera", "Linguiça fina de pernil com queijo e chimichurri", "Medalhão de mandioca", "Choripan artesanal", "Pão de alho", "Hambúrguer artesanal na parrilla", "Panqueca recheada com doce de leite"] },
+];
+
+const diffs = [
+  { icon: "swirl", t: "Mais do que churrasco", d: "Muito mais que churrasco. Cuidamos de cada detalhe do evento para que você aproveite momentos únicos com seus convidados." },
+  { icon: "cut", t: "Carnes de alta qualidade", d: "Cortes premium preparados por especialistas, garantindo sabor, qualidade e um verdadeiro espetáculo gastronômico." },
+  { icon: "check", t: "Cada evento uma experiência", d: "Cada evento é planejado de acordo com o perfil dos convidados, estilo da celebração e necessidades do cliente." },
+  { icon: "target", t: "Estrutura Profissional", d: "Equipe treinada, equipamentos de alto padrão e operação organizada para entregar excelência do início ao fim." },
+  { icon: "thumb", t: "Paixão pelo Sabor", d: "Transformamos o churrasco em uma experiência memorável, unindo tradição, técnica e apresentação impecável." },
+];
+
+const socials = [
+  { icon: "linkedin", label: "LinkedIn", href: contact.linkedin },
+  { icon: "youtube", label: "YouTube", href: contact.youtube },
+  { icon: "facebook", label: "Facebook", href: contact.facebook },
+  { icon: "instagram", label: "Instagram", href: contact.instagram },
+];
+---
+<Layout
+  title="Gazzotto BBQ | O verdadeiro churrasco na parrilla, onde você estiver"
+  description="Churrasco na parrilla para eventos corporativos, casamentos, aniversários e confraternizações. Cortes selecionados, preparo ao vivo e experiência completa."
+>
+  <header class="header">
+    <div class="wrap">
+      <a class="header__logo" href="#topo" aria-label="Gazzotto BBQ — início"><Logo /></a>
+      <a class="btn" href={cta}>Quero um orçamento</a>
+    </div>
+  </header>
+
+  <main id="topo">
+    <CineHero />
+
+    <div class="wrap">
+      <p class="tagline" data-scrub>Parrilla. Cortes nobres. Fogo no ponto certo. <em>Experiência completa.</em></p>
+      <ul class="perks">
+        {perks.map((p) => (
+          <li class="perk"><Icon name={p.icon} /><h3>{p.t}</h3><p>{p.d}</p></li>
+        ))}
+      </ul>
+      <p class="quote" data-scrub>Acreditamos que um bom churrasco começa na escolha da carne e termina na lembrança que ele deixa.</p>
+    </div>
+
+    <section class="events" aria-labelledby="eventos-title">
+      <div class="wrap">
+        <div class="events__art">
+          {media.mascot && <img src={cld(media.mascot)} alt="Mascote touro da Gazzotto BBQ com o polegar para cima" width="600" height="900" loading="lazy" decoding="async" />}
+        </div>
+        <div>
+          <h2 id="eventos-title">Seu evento merece fogo, sabor e experiência.</h2>
+          <p data-scrub>A Gazzotto BBQ leva estrutura, preparo e atendimento para transformar seu encontro em uma experiência gastronômica completa. Atendemos:</p>
+          <ul>{eventos.map((e) => <li>{e}</li>)}</ul>
+          <p data-scrub>Cada serviço é planejado para entregar praticidade, sabor e uma experiência diferenciada para seus convidados.</p>
+          <a class="btn" style="margin-top:1.2rem" href={cta}>Quero um orçamento</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="menus" aria-labelledby="cardapios-title">
+      <div class="wrap">
+        <h2 class="h2" id="cardapios-title">Cardápios</h2>
+        <div class="menus__grid">
+          {menus.map((m) => (
+            <article class="menu" data-tone={m.tone} tabindex="0" aria-label={`Cardápio ${m.name}`} style={`--open:${(12 + m.items.length * 1.85).toFixed(1)}rem`}>
+              <div class="menu__slide menu__front">
+                <span class="menu__icon"><Icon name={m.icon} size={40} /></span>
+                <small>Cardápio</small>
+                <h3>{m.name.toUpperCase()}</h3>
+                <span class="menu__count">{m.items.length} itens na parrilla</span>
+                <span class="menu__hint">Ver cardápio</span>
+              </div>
+              <div class="menu__slide menu__back">
+                <h3>{m.name.toUpperCase()}</h3>
+                <ul>{m.items.map((i) => <li><Icon name="check" size={16} />{i}</li>)}</ul>
+                <a class="btn btn--block" href={cta}>Quero um orçamento</a>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p class="quote" data-scrub style="padding-bottom:0">Acreditamos que um bom churrasco começa na escolha da carne e termina na lembrança que ele deixa.</p>
+      </div>
+    </section>
+
+    <ScrubVideo />
+
+    <section class="gallery" aria-label="Galeria de pratos">
+      <div class="wrap gallery__grid">
+        {media.gallery.map((src, i) =>
+          src
+            ? <img src={cld(src)} alt={`Prato da Gazzotto BBQ ${i + 1}`} width="400" height="440" loading="lazy" decoding="async" />
+            : <div role="presentation"></div>
+        )}
+      </div>
+    </section>
+
+    <section class="about" aria-label="Vídeo institucional">
+      <div class="fullvideo">
+        {aboutSrc
+          ? <video id="about-video" src={aboutSrc} poster={aboutPoster || undefined} autoplay muted loop playsinline preload="metadata" aria-label="Vídeo institucional da Gazzotto BBQ"></video>
+          : <div class="fullvideo__empty">Vídeo institucional (link do Cloudinary pendente)</div>}
+        {aboutSrc && (
+          <div class="fullvideo__vol" id="about-vol">
+            <input id="about-range" type="range" min="0" max="1" step="0.01" value="0.6" aria-label="Volume do vídeo" />
+            <button class="fullvideo__sound" id="about-sound" type="button" aria-pressed="false" aria-label="Ativar som do vídeo">
+              <span class="on"><Icon name="volume" size={18} /></span><span class="off"><Icon name="mute" size={18} /></span>
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <section class="diffs" aria-labelledby="dif-title">
+      <div class="wrap">
+        <h2 class="h2" id="dif-title">Nosso diferencial</h2>
+        <div class="diffs__grid">
+          {diffs.map((d) => (
+            <article class="diff" tabindex="0" aria-label={`${d.t}: ${d.d}`}>
+              <div class="diff__inner">
+                <div class="diff__face diff__front" aria-hidden="true"><Icon name={d.icon} /><h3>{d.t}</h3><span class="diff__hint">Saiba mais</span></div>
+                <div class="diff__face diff__back" aria-hidden="true"><h3>{d.t}</h3><p>{d.d}</p></div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="story" aria-label="Sobre a Gazzotto BBQ">
+      {media.story && <img class="story__bg" data-parallax src={cld(media.story)} alt="" loading="lazy" decoding="async" />}
+      <div class="story__shade"></div>
+      <div class="wrap">
+        <p data-scrub>A Gazzotto BBQ leva até você a experiência do verdadeiro churrasco na parrilla, com cortes selecionados, preparo ao vivo e sabor marcante em cada detalhe. Mais do que servir churrasco, criamos momentos especiais em eventos, confraternizações e encontros, unindo qualidade, fogo e uma experiência gastronômica completa.</p>
+      </div>
+    </section>
+
+    <section class="contact" id="contato" aria-labelledby="contato-title">
+      <div class="wrap">
+        <h2 class="h2" id="contato-title">Contate-nos</h2>
+        <form class="form" id="form" method="post" action="#" data-wa={contact.whatsapp} data-mail={contact.email}>
+          <label class="sr full" for="f-nome">Nome</label>
+          <input class="full" id="f-nome" name="nome" placeholder="Nome" autocomplete="name" required />
+          <label class="sr full" for="f-emp">Empresa</label>
+          <input class="full" id="f-emp" name="empresa" placeholder="Empresa" autocomplete="organization" />
+          <label class="sr" for="f-mail">E-mail</label>
+          <input id="f-mail" name="email" type="email" placeholder="E-mail" autocomplete="email" required />
+          <label class="sr" for="f-tel">Telefone</label>
+          <input id="f-tel" name="telefone" type="tel" placeholder="Telefone" autocomplete="tel" />
+          <label class="sr full" for="f-msg">Mensagem</label>
+          <textarea class="full" id="f-msg" name="mensagem" placeholder="Mensagem"></textarea>
+          <button class="btn btn--red send" type="submit">Enviar</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__top">
+      <a class="footer__logo" href="#topo" aria-label="Gazzotto BBQ — topo">
+        {media.logo ? <img src={cld(media.logo)} alt="Gazzotto BBQ" loading="lazy" /> : <span>GAZZOTTO</span>}
+      </a>
+      <nav class="social" aria-label="Redes sociais">
+        {socials.map((s) => <a href={s.href} aria-label={s.label} rel="noopener"><Icon name={s.icon} size={20} /></a>)}
+      </nav>
+    </div>
+    <div class="footer__bottom"><div class="wrap">© Gazzotto 2026 | Todos os direitos reservados</div></div>
+  </footer>
+
+  <script is:inline>
+    // Vídeo institucional: toca sozinho (mudo) ao entrar na tela e pausa ao sair. Botão liga/desliga o som.
+    (function () {
+      var v = document.getElementById("about-video");
+      if (!v) return;
+      var btn = document.getElementById("about-sound");
+      var rng = document.getElementById("about-range");
+      v.muted = true; v.volume = rng ? parseFloat(rng.value) : 0.6;
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); }
+      else if ("IntersectionObserver" in window) {
+        new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) v.play().catch(function () {}); else v.pause(); });
+        }, { threshold: 0.35 }).observe(v);
+      }
+      function sync() {
+        var on = !v.muted && v.volume > 0;
+        btn.setAttribute("aria-pressed", String(on));
+        btn.setAttribute("aria-label", on ? "Desativar som do vídeo" : "Ativar som do vídeo");
+        btn.classList.toggle("is-on", on);
+        if (rng) rng.value = v.muted ? 0 : v.volume;
+      }
+      if (btn) btn.addEventListener("click", function () {
+        if (v.muted || v.volume === 0) { v.muted = false; if (v.volume === 0) v.volume = 0.6; v.play().catch(function () {}); }
+        else v.muted = true;
+        sync();
+      });
+      if (rng) rng.addEventListener("input", function () {
+        var val = parseFloat(rng.value);
+        v.volume = val; v.muted = val === 0;
+        if (val > 0) v.play().catch(function () {});
+        sync();
+      });
+    })();
+  </script>
+
+  <script is:inline>
+    // Cardápios: no toque/teclado abre/fecha o painel (no mouse o hover já faz isso). Cliques no botão não alternam.
+    document.querySelectorAll(".menu").forEach(function (c) {
+      c.addEventListener("click", function (e) { if (!e.target.closest("a")) c.classList.toggle("is-open"); });
+      c.addEventListener("keydown", function (e) { if (e.target === c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); c.classList.toggle("is-open"); } });
+    });
+    // Cards "Nosso diferencial": no toque/teclado, alterna o giro (no mouse o hover já faz isso).
+    document.querySelectorAll(".diff").forEach(function (c) {
+      c.addEventListener("click", function () { c.classList.toggle("is-flipped"); });
+      c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); c.classList.toggle("is-flipped"); } });
+    });
+  </script>
+
+  <Parallax />
+  <TextScrub />
+
+  <script is:inline>
+    // Formulário sem back-end: abre WhatsApp (se configurado) ou e-mail com a mensagem pronta.
+    // Troque por Formspree/Resend/endpoint próprio quando houver.
+    document.getElementById("form").addEventListener("submit", function (e) {
+      var f = e.currentTarget, d = new FormData(f);
+      var txt = "Olá! Meu nome é " + d.get("nome") + (d.get("empresa") ? " (" + d.get("empresa") + ")" : "") +
+        ".\nE-mail: " + d.get("email") + "\nTelefone: " + d.get("telefone") + "\n\n" + d.get("mensagem");
+      var wa = f.dataset.wa, mail = f.dataset.mail;
+      if (!wa && !mail) return e.preventDefault();
+      e.preventDefault();
+      location.href = wa
+        ? "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt)
+        : "mailto:" + mail + "?subject=" + encodeURIComponent("Orçamento — site") + "&body=" + encodeURIComponent(txt);
+    });
+  </script>
+</Layout>

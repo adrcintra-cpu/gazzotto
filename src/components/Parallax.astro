@@ -1,0 +1,30 @@
+---
+/**
+ * Parallax: elementos com [data-parallax] (imagem dentro de um contêiner com overflow hidden) se movem
+ * mais devagar que a página. Sem JS / com "reduzir movimento": imagem parada.
+ */
+---
+<script>
+(function () {
+var pxItems = Array.prototype.slice.call(document.querySelectorAll("[data-parallax]"));
+if (pxItems.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  var pxTicking = false;
+  var pxUpdate = function () {
+    pxTicking = false;
+    var vh = innerHeight;
+    pxItems.forEach(function (img) {
+      var box = img.parentElement.getBoundingClientRect();
+      if (box.bottom < 0 || box.top > vh) return;                      // fora da tela: ignora
+      var p = (vh - box.top) / (vh + box.height);                        // 0 → entra por baixo, 1 → sai por cima
+      var amp = box.height * 0.13;                                       // folga da imagem (12% em cada ponta)
+      img.style.transform = "translate3d(0," + ((p - 0.5) * 2 * amp).toFixed(1) + "px,0)";
+    });
+  };
+  var pxRequest = function () { if (!pxTicking) { pxTicking = true; requestAnimationFrame(pxUpdate); } };
+  addEventListener("scroll", pxRequest, { passive: true });
+  addEventListener("resize", pxRequest, { passive: true });
+  pxUpdate();
+}
+
+})();
+</script>

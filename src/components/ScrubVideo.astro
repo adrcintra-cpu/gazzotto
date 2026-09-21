@@ -1,0 +1,109 @@
+---
+/**
+ * Etapa "Não é só burger": vídeo controlado pelo scroll (frame a frame, reversível, suavizado por rAF)
+ * com o título aparecendo palavra a palavra. URL do Cloudinary usado exatamente como fornecido.
+ */
+const VIDEO = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789949625/movie_scof6k.mp4";
+---
+<section class="sv" data-scrubvideo aria-labelledby="sv-title">
+  <div class="sv__stage">
+    <video class="sv__video" src={VIDEO} muted playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+    <div class="sv__copy">
+      <div>
+        <h2 class="sv__title" id="sv-title"><span>Não é só burger.</span> <span class="sv__accent">É parte do evento.</span></h2>
+      </div>
+    </div>
+  </div>
+</section>
+<noscript><style>.sv { height: 92.3vh; } .sv__stage { position: relative; top: 0; }</style></noscript>
+
+<style is:global>
+.sv { position: relative; height: 260vh; background: var(--bg-dark, #16171a); }
+.sv__stage { position: sticky; top: 3.85vh; height: 92.3vh; overflow: hidden; background: radial-gradient(80% 70% at 50% 40%, #2b2320, #0b0b0d);
+  /* bordas "infinitas": o vídeo se dissolve no fundo da página em cima e embaixo */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%); }
+.sv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: #000; }
+.sv__copy { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0 1rem; pointer-events: none; }
+.sv__title { font: 500 18px/1.4 var(--font-display, "Oswald", sans-serif); letter-spacing: .08em; color: #fff; text-align: center; white-space: nowrap; }
+.sv__title .sv__accent { color: inherit; }
+@media (prefers-reduced-motion: reduce) { .sv { height: 92.3vh; } .sv__stage { position: relative; top: 0; } }
+</style>
+
+<script>
+(function () {
+var svs = Array.prototype.slice.call(document.querySelectorAll("[data-scrubvideo]"));
+if (svs.length) {
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var LERP = 0.14, EPS = 0.001, MIN = 0.14, SOFT = 3;
+
+  var splitWords = function (el) {
+    var words = [], walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [], n;
+    while ((n = walker.nextNode())) if (n.nodeValue.trim()) nodes.push(n);
+    nodes.forEach(function (node) {
+      var frag = document.createDocumentFragment();
+      node.nodeValue.split(/(\s+)/).forEach(function (part) {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        var s = document.createElement("span");
+        s.textContent = part; s.style.display = "inline-block"; s.style.willChange = "opacity, transform";
+        frag.appendChild(s); words.push(s);
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    return words;
+  };
+
+  svs.forEach(function (sec) {
+    var video = sec.querySelector("video"), title = sec.querySelector(".sv__title");
+    if (reduced) { video.pause(); return; }
+    var words = splitWords(title);
+    var dur = 0, target = 0, cur = 0, raf = 0, top = 0, range = 1, near = false, primed = false, lastP = -1;
+
+    var measure = function () { top = sec.getBoundingClientRect().top + scrollY; range = Math.max(1, sec.offsetHeight - innerHeight); };
+    var onMeta = function () { if (video.readyState >= 1 && isFinite(video.duration)) { dur = video.duration; compute(); } };
+    var prime = function () { if (primed) return; primed = true; var p = video.play(); if (p && p.then) p.then(function () { video.pause(); }).catch(function () {}); };
+    var kick = function () { if (!raf) raf = requestAnimationFrame(tick); };
+
+    var paintText = function (p) {
+      var tp = Math.min(Math.max((p - 0.04) / 0.5, 0), 1), n = words.length;
+      for (var i = 0; i < n; i++) {
+        var lit = Math.min(Math.max((tp * (n + SOFT) - i) / SOFT, 0), 1);
+        words[i].style.opacity = (MIN + (1 - MIN) * lit).toFixed(3);
+        words[i].style.transform = "translate3d(0," + ((1 - lit) * 10).toFixed(1) + "px,0)";
+      }
+    };
+
+    var compute = function () {
+      var y = Math.min(Math.max(scrollY - top, 0), range), p = y / range;
+      if (p !== lastP) { lastP = p; paintText(p); }
+      target = dur * p;
+      if (dur) kick();
+    };
+    var tick = function () {
+      raf = 0;
+      var d = target - cur;
+      if (Math.abs(d) < EPS) cur = target;
+      else { cur += d * LERP; if (Math.abs(target - cur) < 0.008) cur = target; }
+      if (!video.seeking && Math.abs(video.currentTime - cur) > EPS) video.currentTime = cur >= dur - 0.008 ? dur : cur;
+      if (Math.abs(target - cur) > EPS || video.seeking) kick();
+    };
+
+    paintText(0);
+    video.addEventListener("loadedmetadata", onMeta, { once: true });
+    // Só carrega o vídeo pesado quando a seção está a ~2 telas de distância.
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) {
+        near = es[0].isIntersecting;
+        if (near) { video.preload = "auto"; prime(); measure(); compute(); }
+      }, { rootMargin: "200% 0px" }).observe(sec);
+    } else { video.preload = "auto"; near = true; }
+    addEventListener("scroll", function () { if (near) compute(); }, { passive: true });
+    addEventListener("resize", function () { measure(); lastP = -1; compute(); }, { passive: true });
+    addEventListener("load", function () { measure(); compute(); });
+    measure(); onMeta();
+  });
+}
+
+})();
+</script>

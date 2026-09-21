@@ -1,0 +1,65 @@
+---
+/**
+ * Text Scrub: as palavras de qualquer elemento com [data-scrub] acendem uma a uma conforme o
+ * scroll (e apagam ao rolar de volta). Sem JS / com "reduzir movimento": texto normal, todo visível.
+ */
+---
+<style is:global>
+  .is-scrub .sw { will-change: opacity; }
+</style>
+<script>
+(function () {
+var items = Array.prototype.slice.call(document.querySelectorAll("[data-scrub]"));
+if (items.length && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  var MIN = 0.16;   // opacidade das palavras ainda "apagadas"
+  var SOFT = 4;     // quantas palavras ficam em transição ao mesmo tempo
+
+  // Divide os nós de texto em palavras (<span class="sw">), preservando <em>, <strong> etc.
+  var split = function (el) {
+    var words = [];
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    var nodes = [], n;
+    while ((n = walker.nextNode())) if (n.nodeValue.trim()) nodes.push(n);
+    nodes.forEach(function (node) {
+      var frag = document.createDocumentFragment();
+      node.nodeValue.split(/(\s+)/).forEach(function (part) {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        var s = document.createElement("span");
+        s.className = "sw"; s.textContent = part; s.style.opacity = MIN;
+        frag.appendChild(s); words.push({ el: s, v: MIN });
+      });
+      node.parentNode.replaceChild(frag, node);
+    });
+    return words;
+  };
+
+  var state = items.map(function (el) { el.classList.add("is-scrub"); return { el: el, words: split(el), p: -1 }; });
+  var ticking = false;
+
+  var update = function () {
+    ticking = false;
+    var vh = innerHeight;
+    state.forEach(function (it) {
+      var r = it.el.getBoundingClientRect();
+      if (r.bottom < -vh * 0.2 || r.top > vh * 1.2) return;   // longe da tela: ignora
+      // Começa quando o topo do bloco passa de 85% da tela; termina quando ~o bloco todo passou de ~40%.
+      var p = Math.min(Math.max((vh * 0.85 - r.top) / (vh * 0.4 + r.height * 0.6), 0), 1);
+      if (Math.abs(p - it.p) < 0.0005) return;
+      it.p = p;
+      var n = it.words.length;
+      for (var i = 0; i < n; i++) {
+        var lit = Math.min(Math.max((p * (n + SOFT) - i) / SOFT, 0), 1);
+        var v = MIN + (1 - MIN) * lit;
+        var w = it.words[i];
+        if (Math.abs(v - w.v) > 0.004) { w.v = v; w.el.style.opacity = v.toFixed(3); }
+      }
+    });
+  };
+  var request = function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  addEventListener("scroll", request, { passive: true });
+  addEventListener("resize", request, { passive: true });
+  update();
+}
+})();
+</script>
