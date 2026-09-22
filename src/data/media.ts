@@ -33,7 +33,33 @@ export const media = {
   // Imagens (podem ser Cloudinary também). Vazio = placeholder escuro.
   logo: "/img/logo.webp", // marca do rodapé (troque pelo selo horizontal quando tiver)
   mascot: "/img/mascot.webp", // touro da seção laranja
-  gallery: ["/img/gallery-1.webp", "/img/gallery-2.webp", "/img/gallery-3.webp", "/img/gallery-4.webp"],
+  // Depoimentos "Momentos Gazzotto" (seção com pilha animada no scroll). Troque à vontade.
+  moments: [
+    {
+      quote:
+        "A experiência foi muito além do churrasco. A parrilla chamou a atenção desde o início e tudo foi servido com muito cuidado. A carne estava incrível e nossos convidados elogiaram muito.",
+      name: "Mariana e Rafael Oliveira",
+      event: "Casamento",
+    },
+    {
+      quote:
+        "O Gazzotto transformou o almoço da empresa em uma experiência de verdade. Organização impecável, atendimento excelente e um churrasco que virou assunto entre todo mundo.",
+      name: "Ricardo Martins",
+      event: "Evento corporativo",
+    },
+    {
+      quote:
+        "Queríamos algo descontraído, mas com qualidade e apresentação. Foi exatamente isso que encontramos. A equipe cuidou de tudo e conseguimos simplesmente aproveitar a festa.",
+      name: "Fernanda Almeida",
+      event: "Aniversário",
+    },
+    {
+      quote:
+        "A parrilla acontecendo ao vivo fez toda a diferença. Além da comida excelente, criou aquele clima de reunir as pessoas em volta do fogo. Foi um dos pontos altos do nosso evento.",
+      name: "Gustavo e Camila Ferreira",
+      event: "Confraternização",
+    },
+  ],
   story: "/img/story.webp", // foto de fundo do bloco "A Gazzotto BBQ leva até você…"
 };
 

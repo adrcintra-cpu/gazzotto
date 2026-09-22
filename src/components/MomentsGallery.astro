@@ -1,0 +1,204 @@
+---
+/**
+ * "Momentos Gazzotto": depoimentos em pilha cinematográfica.
+ * Desktop: pilha de cards controlada pelo scroll (cada card sobe, escala e gira levemente
+ * enquanto revela o próximo, com numeração grande ao fundo e leve parallax).
+ * Mobile: a pilha é desativada e vira um carrossel horizontal com scroll-snap (um depoimento por vez).
+ * `prefers-reduced-motion`: vira uma lista simples, sem sobreposição nem JS.
+ */
+import { media } from "../data/media";
+import Icon from "./Icon.astro";
+
+const items = media.moments || [];
+---
+<section class="moments" id="momentos" aria-label="Galeria de momentos Gazzotto BBQ">
+  <div class="wrap moments__head">
+    <h2 class="h2">Momentos Gazzotto</h2>
+    <p>Quem já viveu a experiência Gazzotto BBQ conta como foi.</p>
+  </div>
+  {items.length > 0 && (
+    <div class="moments__scroll" data-momentsscroll style={`--n:${items.length}`}>
+      <div class="moments__stage">
+        {items.map((m, i) => (
+          <div class="moments__layer" style={`z-index:${items.length - i}`}>
+            <span class="moments__num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+            <figure class="moments__card">
+              <span class="moments__quote moments__quote--open" aria-hidden="true">&ldquo;</span>
+              <blockquote class="moments__text">{m.quote}</blockquote>
+              <span class="moments__divider" aria-hidden="true"></span>
+              <div class="moments__stars" aria-hidden="true">★★★★★</div>
+              <figcaption class="moments__attrib">
+                <span class="moments__avatar" aria-hidden="true"><Icon name="user" size={20} /></span>
+                <span class="moments__attrib-text">
+                  <strong>{m.name}</strong>
+                  <span>{m.event}</span>
+                </span>
+              </figcaption>
+              <span class="moments__quote moments__quote--close" aria-hidden="true">&rdquo;</span>
+            </figure>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+</section>
+
+<style is:global>
+.moments { background: var(--burger, #d83030); padding-block: 5rem 5rem; }
+.moments__head { text-align: center; color: #fff; margin-top: 200px; }
+.moments__head p { margin-top: .75rem; color: #fff; opacity: .8; font-size: .95rem; max-width: 42ch; margin-inline: auto; }
+
+.moments__scroll { position: relative; height: calc(var(--n, 4) * 60vh); margin-top: .1rem; }
+.moments__stage {
+  position: sticky; top: 0; height: 70vh; height: 70svh; display: grid;
+  align-items: start; justify-items: center; padding-top: clamp(.5rem, 4vh, 2.5rem); overflow: hidden;
+  /* alinhado ao topo (em vez de centralizado) para não sobrar espaço vazio entre o título e o card;
+     altura reduzida em 30% (de 100vh para 70vh) — o JS usa a altura real do palco (e não a da
+     janela) para calcular a duração do scroll "preso", então a sincronia continua correta. */
+}
+
+.moments__layer { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.moments__num {
+  position: absolute; font: 700 clamp(7rem, 18vw, 14rem)/1 var(--font-display, "Oswald", sans-serif);
+  color: var(--fish); opacity: .16; letter-spacing: -.03em; user-select: none; will-change: transform, opacity;
+}
+.moments__card {
+  position: relative; width: min(74vw, 44rem); min-height: min(70vh, 34rem); border-radius: 20px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / .22); will-change: transform, opacity;
+  background: linear-gradient(160deg, #fffaf2 0%, #f3e3c9 100%);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(2.2rem, 4vw, 3.5rem);
+}
+.moments__quote {
+  position: absolute; font: 700 4.5rem/1 Georgia, "Times New Roman", serif; color: var(--burger); opacity: .3; pointer-events: none;
+}
+.moments__quote--open { top: .8rem; left: 1.6rem; }
+.moments__quote--close { bottom: .3rem; right: 1.8rem; }
+.moments__text {
+  position: relative; z-index: 1; margin: 0; color: #2a2016;
+  font: 400 clamp(1.05rem, 1.9vw, 1.3rem)/1.6 var(--font-body);
+}
+.moments__divider { position: relative; z-index: 1; width: 3rem; height: 2px; background: var(--burger); opacity: .6; margin: 1.6rem 0 1rem; border: 0; }
+.moments__stars { position: relative; z-index: 1; color: var(--burger); font-size: 1rem; letter-spacing: .3rem; margin-bottom: .3rem; }
+.moments__attrib { position: relative; z-index: 1; display: flex; align-items: center; gap: .85rem; }
+.moments__avatar {
+  flex: none; width: 2.6rem; height: 2.6rem; border-radius: 50%; display: grid; place-items: center;
+  background: rgb(216 48 48 / .12); color: var(--burger);
+}
+.moments__attrib-text strong { display: block; font: 600 1.4rem/1.3 var(--font-display, "Oswald", sans-serif); color: #241c14; letter-spacing: .02em; }
+.moments__attrib-text span { display: block; font: 500 .85rem/1.4 var(--font-body); color: var(--burger); opacity: .85; margin-top: .2rem; }
+
+/* Celular: sem pilha/scroll-jack — carrossel horizontal com scroll-snap, um depoimento por vez */
+@media (max-width: 768px) {
+  .moments__scroll { height: auto; margin-top: .1rem; }
+  .moments__stage {
+    position: static; height: auto; display: flex; align-items: flex-start; place-items: initial; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory; gap: 1rem; padding: 0 1.2rem 1rem; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .moments__stage::-webkit-scrollbar { display: none; }
+  .moments__layer { position: relative; inset: auto; display: block; flex: 0 0 86vw; scroll-snap-align: center; pointer-events: auto; }
+  .moments__num { display: none; }
+  .moments__card { width: 100%; min-height: 60vh; padding: 2rem 1.6rem 2.4rem; transform: none !important; opacity: 1 !important; }
+  .moments__quote { font-size: 3.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moments__scroll { height: auto; }
+  .moments__stage { position: static; height: auto; display: grid; gap: 2rem; padding-block: 1rem; place-items: initial; }
+  .moments__layer { position: relative; inset: auto; }
+  .moments__card { width: min(90vw, 40rem); height: auto; min-height: auto; margin-inline: auto; padding: 2.2rem 1.8rem 2.6rem; transform: none !important; opacity: 1 !important; }
+  .moments__num { position: static; display: block; text-align: center; opacity: .22; margin-bottom: -2.2rem; }
+}
+</style>
+
+<script>
+(function () {
+  var scrolls = Array.prototype.slice.call(document.querySelectorAll("[data-momentsscroll]"));
+  if (!scrolls.length) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  var mqDesktop = matchMedia("(min-width: 769px)");
+  var smoothstep = function (t) { return t * t * (3 - 2 * t); };
+  var clamp = function (v, a, b) { return Math.min(Math.max(v, a), b); };
+
+  scrolls.forEach(function (scrollEl) {
+    var stageEl = scrollEl.querySelector(".moments__stage");
+    var cards = Array.prototype.slice.call(scrollEl.querySelectorAll(".moments__card"));
+    var nums = Array.prototype.slice.call(scrollEl.querySelectorAll(".moments__num"));
+    var N = cards.length;
+    if (!N) return;
+
+    var EXIT_PX = 130, ROT_DEG = 1.6, ENTRANCE_PX = 46, LERP = 0.26, EPS = 0.0008;
+    var top = 0, range = 1, raw = 0, smoothed = 0, raf = 0, near = false;
+
+    var measure = function () {
+      top = scrollEl.getBoundingClientRect().top + scrollY;
+      // usa a altura real do palco (não a da janela): o palco tem 70vh, então o scroll
+      // "preso" (sticky) dura (altura do bloco - altura do palco), não (altura do bloco - vh)
+      var stageH = (stageEl && stageEl.offsetHeight) || innerHeight;
+      range = Math.max(1, scrollEl.offsetHeight - stageH);
+    };
+
+    var resetMobile = function () {
+      cards.forEach(function (c) { c.style.transform = ""; c.style.opacity = ""; });
+      nums.forEach(function (n) { n.style.transform = ""; n.style.opacity = ""; });
+      raw = 0; smoothed = 0;
+    };
+
+    var paint = function (S) {
+      for (var i = 0; i < N; i++) {
+        var ownE = smoothstep(clamp(S - i, 0, 1));
+        var incoming = i === 0 ? 1 : smoothstep(clamp(S - (i - 1), 0, 1));
+        var entT = (1 - incoming) * ENTRANCE_PX;
+        var entS = (1 - incoming) * 0.04;
+        var exitT = -ownE * EXIT_PX;
+        var exitS = ownE * 0.08;
+        var rot = ownE * (i % 2 === 0 ? ROT_DEG : -ROT_DEG);
+        var op = 1 - ownE;
+        var scale = 1 - entS - exitS;
+        cards[i].style.transform = "translateY(" + (entT + exitT).toFixed(2) + "px) scale(" + scale.toFixed(4) + ") rotate(" + rot.toFixed(3) + "deg)";
+        cards[i].style.opacity = op.toFixed(3);
+        if (nums[i]) {
+          nums[i].style.transform = "translateY(" + (exitT * 0.4).toFixed(2) + "px)";
+          nums[i].style.opacity = (0.16 * (1 - ownE)).toFixed(3);
+        }
+      }
+    };
+
+    var kick = function () { if (!raf) raf = requestAnimationFrame(tick); };
+    var tick = function () {
+      raf = 0;
+      var d = raw - smoothed;
+      if (Math.abs(d) < EPS) smoothed = raw; else smoothed += d * LERP;
+      paint(smoothed);
+      if (Math.abs(raw - smoothed) > EPS) kick();
+    };
+    var compute = function () {
+      if (!near || !mqDesktop.matches) return;
+      var y = clamp(scrollY - top, 0, range);
+      raw = (y / range) * (N - 1);
+      kick();
+    };
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) {
+        near = es[0].isIntersecting;
+        if (near && mqDesktop.matches) { measure(); compute(); }
+      }, { rootMargin: "200% 0px" }).observe(scrollEl);
+    } else { near = true; }
+
+    addEventListener("scroll", compute, { passive: true });
+    addEventListener("resize", function () { if (mqDesktop.matches) { measure(); compute(); } }, { passive: true });
+
+    var onModeChange = function () {
+      if (mqDesktop.matches) { measure(); compute(); }
+      else { resetMobile(); }
+    };
+    if (mqDesktop.addEventListener) mqDesktop.addEventListener("change", onModeChange);
+    else if (mqDesktop.addListener) mqDesktop.addListener(onModeChange);
+
+    measure();
+    if (mqDesktop.matches) compute();
+  });
+})();
+</script>

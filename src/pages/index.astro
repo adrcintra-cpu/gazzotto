@@ -4,6 +4,7 @@ import Icon from "../components/Icon.astro";
 import Logo from "../components/Logo.astro";
 import CineHero from "../components/CineHero.astro";
 import ScrubVideo from "../components/ScrubVideo.astro";
+import MomentsGallery from "../components/MomentsGallery.astro";
 import Parallax from "../components/Parallax.astro";
 import TextScrub from "../components/TextScrub.astro";
 import { media, contact, cld, cldPoster } from "../data/media";
@@ -81,9 +82,15 @@ const socials = [
     </div>
 
     <section class="events" id="eventos" aria-labelledby="eventos-title">
-      <div class="wrap">
+      <div class="wrap events__ticket">
         <div class="events__art">
-          {media.mascot && <img src={cld(media.mascot)} alt="Mascote touro da Gazzotto BBQ com o polegar para cima" width="600" height="900" loading="lazy" decoding="async" />}
+          {media.mascot && (
+            <span class="mascot">
+              <img src={cld(media.mascot)} alt="Mascote touro da Gazzotto BBQ com o polegar para cima" width="600" height="900" loading="lazy" decoding="async" />
+              <span class="mascot__blink mascot__blink--l" aria-hidden="true"></span>
+              <span class="mascot__blink mascot__blink--r" aria-hidden="true"></span>
+            </span>
+          )}
         </div>
         <div>
           <h2 id="eventos-title">Seu evento merece fogo, sabor e experiência.</h2>
@@ -122,15 +129,7 @@ const socials = [
 
     <ScrubVideo />
 
-    <section class="gallery" aria-label="Galeria de pratos">
-      <div class="wrap gallery__grid">
-        {media.gallery.map((src, i) =>
-          src
-            ? <img src={cld(src)} alt={`Prato da Gazzotto BBQ ${i + 1}`} width="400" height="440" loading="lazy" decoding="async" />
-            : <div role="presentation"></div>
-        )}
-      </div>
-    </section>
+    <MomentsGallery />
 
     <section class="about" aria-label="Vídeo institucional">
       <div class="fullvideo">

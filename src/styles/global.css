@@ -80,8 +80,19 @@ section { scroll-margin-top: 4.5rem; }
 .btn--red:hover { background: var(--rust); }
 
 /* Header */
-.header { position: fixed; inset: 0 0 auto; z-index: 20; padding: 1rem 0; pointer-events: none; transition: background .3s, backdrop-filter .3s, padding .3s; }
-.header.is-solid { background: rgb(20 21 24 / .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: .6rem 0; }
+.header { position: fixed; inset: 0 0 auto; z-index: 20; padding: 1rem 0; pointer-events: none; transition: padding .3s; }
+.header::before {
+  /* Fundo do header num pseudo-elemento à parte, como um degradê de opacidade pura (sem blur) que já
+     termina em transparente — assim não cria uma linha/emenda dura sobre seções escuras full-bleed
+     (ex.: vídeo do burger). Um "backdrop-filter: blur()" foi testado e descartado: o blur só é
+     calculado dentro da própria caixa do header, então mesmo com fade de opacidade ele sempre deixa
+     um corte nítido (borrado em cima, nítido embaixo) exatamente na borda de baixo do header. */
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(to bottom, rgb(20 21 24 / .88) 0%, rgb(20 21 24 / .88) 25%, transparent 100%);
+  opacity: 0; transition: opacity .3s;
+}
+.header.is-solid { padding: .6rem 0; }
+.header.is-solid::before { opacity: 1; }
 .header .wrap { display: flex; align-items: center; gap: 1.6rem; }
 .header a, .header button { pointer-events: auto; }
 .nav { display: flex; align-items: center; gap: 1.8rem; margin-left: auto; }
@@ -130,12 +141,36 @@ section { scroll-margin-top: 4.5rem; }
 .quote { text-align: center; padding: 3rem 0 4rem; color: var(--cream); font-size: clamp(.95rem, 2vw, 1.1rem); }
 
 /* Eventos (laranja) */
-.events { background: var(--burger); color: #fff; }
+/* O fundo escuro do Cardápio já aparece nos últimos 30% da seção, "por baixo" do palco vermelho,
+   para a transição entre as seções parecer contínua antes mesmo de rolar até o Cardápio. */
+.events { padding-block: 3rem; background: linear-gradient(to bottom, var(--bg) 0%, var(--bg) 70%, var(--bg-dark) 70%, var(--bg-dark) 100%); }
 .events .btn { background: var(--fish); color: var(--barbecue); }
 .events .btn:hover { background: #fff; }
-.events .wrap { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 2rem; min-height: 26rem; padding-block: 3rem; }
-.events__art { display: grid; place-items: center; }
-.events__art img { max-height: 30rem; width: auto; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .35)); }
+.events .wrap { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 2rem; min-height: 26rem; padding-block: 3rem; padding-inline: clamp(1.6rem, 4.5vw, 3.4rem); color: #fff; }
+.events__art { position: relative; z-index: 1; align-self: stretch; }
+/* Mascote "sobressaindo": ultrapassa a borda de cima do card vermelho e fica com a base alinhada
+   ao fim da coluna de texto (perto do botão "Quero um orçamento"). O fundo/recorte de ticket
+   fica num ::before por trás (z-index -2), então a imagem, ancorada pela base e maior que a
+   coluna, aparece por cima sem ser cortada pelo card. */
+.events__art .mascot { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%) scaleX(1.56); transform-origin: center; display: block; line-height: 0; }
+.events__art .mascot img { display: block; max-height: 36rem; width: auto; }
+@media (max-width: 860px) { .events__art { align-self: auto; height: 30rem; } }
+
+/* Piscar de olhos: duas "pálpebras" (cor do pelo ao redor dos olhos) posicionadas por porcentagem
+   sobre a foto, escondidas a maior parte do tempo (scaleY(0)) e fechando rapidamente de vez em
+   quando. Coordenadas calibradas a partir da posição dos olhos em mascot.webp. */
+.mascot__blink {
+  position: absolute; background: #7a4118; border-radius: 50%;
+  transform: scaleY(0); transform-origin: center; pointer-events: none;
+  animation: mascot-blink 5.5s ease-in-out infinite;
+}
+.mascot__blink--l { left: 44.4%; top: 15.3%; width: 6.6%; height: 5.4%; margin-left: -3.3%; margin-top: -2.7%; }
+.mascot__blink--r { left: 55.4%; top: 13%; width: 5.8%; height: 4.4%; margin-left: -2.9%; margin-top: -2.2%; animation-delay: .02s; }
+@keyframes mascot-blink {
+  0%, 95%, 98%, 100% { transform: scaleY(0); }
+  96%, 97% { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) { .mascot__blink { animation: none; transform: scaleY(0); } }
 .events h2 { font: 700 clamp(1.8rem, 3.4vw, 2.4rem)/1.15 var(--font-display); }
 .events p { margin-top: 1rem; font-size: .85rem; max-width: 46ch; }
 .events ul { margin: 1rem 0; font-size: .85rem; font-weight: 700; }
@@ -174,10 +209,7 @@ section { scroll-margin-top: 4.5rem; }
 @media (prefers-reduced-motion: reduce) { .menu, .menu__slide { transition: none; } }
 @media (max-width: 520px) { .menu { --extra: 4rem; } .menu.is-open, .menu:focus-visible { height: calc(var(--open, 32rem) + var(--extra)); } }
 
-/* Galeria */
-.gallery { background: var(--bg); padding: .9rem 0; }
-.gallery__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
-.gallery__grid > * { aspect-ratio: 1 / 1.1; border-radius: 4px; background: #101114; object-fit: cover; width: 100%; }
+/* Galeria "Momentos Gazzotto": regras em src/components/MomentsGallery.astro */
 
 /* Vídeo institucional */
 .about { padding: 0; }
@@ -243,8 +275,6 @@ section { scroll-margin-top: 4.5rem; }
 
 @media (max-width: 860px) {
   .events .wrap { grid-template-columns: 1fr; }
-  .events__art { order: 2; }
-  .gallery__grid { grid-template-columns: repeat(2, 1fr); }
   .diffs__grid { grid-template-columns: 1fr; }
   .diff, .diff:nth-child(n+4) { grid-column: auto; }
   .form { grid-template-columns: 1fr; }
@@ -258,17 +288,34 @@ section { scroll-margin-top: 4.5rem; }
   --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 body { position: relative; }
-.events, .story, .gallery, .footer, .footer__bottom, .perk { position: relative; isolation: isolate; }
+.events__ticket, .story, .moments, .footer, .footer__bottom, .perk { position: relative; isolation: isolate; }
 .diff__face, .menu__slide { isolation: isolate; }
-body::before, .events::before, .story::before, .gallery::before, .footer::before, .footer__bottom::before,
+body::before, .story::before, .moments::before, .footer::before, .footer__bottom::before,
 .perk::before, .menu__slide::before, .diff__face::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
   background: var(--noise) 0 0 / 240px 240px;
   mix-blend-mode: overlay; opacity: var(--grain, .2);
 }
-.events, .story { --grain: .28; }
+.events__ticket, .story, .moments { --grain: .28; }
+.events__ticket::after {
+  content: "";
+  --notch: 11px; --tile: 30px; --edge-off: 15px;
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: var(--noise) 0 0 / 240px 240px;
+  mix-blend-mode: overlay; opacity: var(--grain, .2);
+  /* mesmo recorte do ::before, para o grão não "vazar" para dentro dos furos do ticket */
+  -webkit-mask-image:
+    radial-gradient(circle var(--notch) at 0 50%, transparent 0 var(--notch), #000 calc(var(--notch) + .5px) 100%),
+    radial-gradient(circle var(--notch) at 100% 50%, transparent 0 var(--notch), #000 calc(var(--notch) + .5px) 100%);
+  -webkit-mask-size: 100% var(--tile), 100% var(--tile);
+  -webkit-mask-position: 0 var(--edge-off), 100% var(--edge-off);
+  -webkit-mask-repeat: repeat-y, repeat-y;
+  -webkit-mask-composite: source-in;
+}
+@media (max-width: 520px) { .events__ticket::after { --notch: 8px; --tile: 22px; --edge-off: 11px; } }
+
 .perk, .menu__slide, .diff__face { --grain: .16; }
-.footer, .footer__bottom, .gallery { --grain: .22; }
+.footer, .footer__bottom { --grain: .22; }
 
 /* Cardápios — cores da paleta por categoria */
 .menu .btn { background: var(--m-fg); color: var(--m-bg); }
@@ -312,3 +359,22 @@ body::before, .events::before, .story::before, .gallery::before, .footer::before
 .perk:hover h3, .perk:focus-within h3 { color: #fff; transform: translateX(4px); }
 .perk:hover p, .perk:focus-within p { color: var(--fish); transform: translateX(4px); }
 @media (prefers-reduced-motion: reduce) { .perk, .perk svg, .perk h3, .perk p, .perk::after { transition: none; } .perk:hover, .perk:focus-within { transform: none; } }
+
+/* Formato de ticket (bordas recortadas nas laterais) no card de "Seu evento...".
+   Fica num ::before atrás do conteúdo, para o mascote poder ultrapassar a borda de cima sem ser cortado.
+   Usa a propriedade original da WebKit (-webkit-mask-composite: source-in), que funciona em
+   Chrome, Edge e Safari. Em navegadores sem suporte (ex.: Firefox), o card fica com cantos
+   arredondados normais, sem o recorte — nada quebra, só perde o efeito decorativo. */
+.events__ticket::before {
+  content: "";
+  --notch: 11px; --tile: 30px; --edge-off: 15px;
+  position: absolute; inset: 0; z-index: -2; border-radius: 20px; background: var(--burger);
+  -webkit-mask-image:
+    radial-gradient(circle var(--notch) at 0 50%, transparent 0 var(--notch), #000 calc(var(--notch) + .5px) 100%),
+    radial-gradient(circle var(--notch) at 100% 50%, transparent 0 var(--notch), #000 calc(var(--notch) + .5px) 100%);
+  -webkit-mask-size: 100% var(--tile), 100% var(--tile);
+  -webkit-mask-position: 0 var(--edge-off), 100% var(--edge-off);
+  -webkit-mask-repeat: repeat-y, repeat-y;
+  -webkit-mask-composite: source-in;
+}
+@media (max-width: 520px) { .events__ticket::before { --notch: 8px; --tile: 22px; --edge-off: 11px; } }
