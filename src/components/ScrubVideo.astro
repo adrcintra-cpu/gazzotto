@@ -15,6 +15,12 @@ const VIDEO = "/video/burger.mp4";
       </div>
     </div>
   </div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <filter id="sv-smoke" x="-25%" y="-50%" width="150%" height="200%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.02" numOctaves="2" seed="11" result="noise" />
+      <feDisplacementMap id="sv-smoke-map" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
 </section>
 <noscript><style>.sv { height: 100vh; } .sv__stage { position: relative; top: 0; }</style></noscript>
 
@@ -37,7 +43,7 @@ const VIDEO = "/video/burger.mp4";
    cima ou embaixo). Era "contain" no desktop por causa do vídeo antigo (proporção mais "quadrada",
    que cortava o hambúrguer com "cover"); o vídeo atual (1920x1080) preenche bem com "cover". */
 .sv__copy { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0 1rem; pointer-events: none; }
-.sv__title { font: 500 clamp(1.15rem, 3.4vw, 2.2rem)/1.25 var(--font-display, "Oswald", sans-serif); letter-spacing: .05em; color: #fff; text-align: center; white-space: normal; text-wrap: balance; }
+.sv__title { font: 500 clamp(1.15rem, 3.4vw, 2.2rem)/1.25 var(--font-display, "Oswald", sans-serif); letter-spacing: .05em; color: #fff; text-align: center; white-space: normal; text-wrap: balance; will-change: filter, opacity, transform; }
 @media (min-width: 700px) { .sv__title { white-space: nowrap; } }
 .sv__title .sv__accent { color: inherit; }
 /* Celular: o scroll do vídeo dura mais */
@@ -50,29 +56,12 @@ const VIDEO = "/video/burger.mp4";
 var svs = Array.prototype.slice.call(document.querySelectorAll("[data-scrubvideo]"));
 if (svs.length) {
   var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var LERP = 0.14, EPS = 0.001, MIN = 0.14, SOFT = 3;
-
-  var splitWords = function (el) {
-    var words = [], walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [], n;
-    while ((n = walker.nextNode())) if (n.nodeValue.trim()) nodes.push(n);
-    nodes.forEach(function (node) {
-      var frag = document.createDocumentFragment();
-      node.nodeValue.split(/(\s+)/).forEach(function (part) {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-        var s = document.createElement("span");
-        s.textContent = part; s.style.display = "inline-block"; s.style.willChange = "opacity, transform";
-        frag.appendChild(s); words.push(s);
-      });
-      node.parentNode.replaceChild(frag, node);
-    });
-    return words;
-  };
+  var LERP = 0.14, EPS = 0.001, MIN = 0.55;
 
   svs.forEach(function (sec) {
     var video = sec.querySelector("video"), title = sec.querySelector(".sv__title");
+    var smokeMap = document.getElementById("sv-smoke-map");
     if (reduced) { video.pause(); return; }
-    var words = splitWords(title);
     var dur = 0, target = 0, cur = 0, raf = 0, top = 0, range = 1, near = false, primed = false, lastP = -1;
 
     var measure = function () { top = sec.getBoundingClientRect().top + scrollY; range = Math.max(1, sec.offsetHeight - innerHeight); };
@@ -80,18 +69,29 @@ if (svs.length) {
     var prime = function () { if (primed) return; primed = true; var p = video.play(); if (p && p.then) p.then(function () { video.pause(); }).catch(function () {}); };
     var kick = function () { if (!raf) raf = requestAnimationFrame(tick); };
 
-    var paintText = function (p) {
-      var tp = Math.min(Math.max((p - 0.04) / 0.5, 0), 1), n = words.length;
-      for (var i = 0; i < n; i++) {
-        var lit = Math.min(Math.max((tp * (n + SOFT) - i) / SOFT, 0), 1);
-        words[i].style.opacity = (MIN + (1 - MIN) * lit).toFixed(3);
-        words[i].style.transform = "translate3d(0," + ((1 - lit) * 10).toFixed(1) + "px,0)";
+    // Título: começa em fumaça (blur + distorção via turbulência) e se resolve em texto nítido
+    // ao longo do início da rolagem da seção — igual ao efeito do banner, mas em vez de dissolver
+    // o texto (nítido → fumaça), aqui ele nasce da fumaça (fumaça → nítido).
+    var paintTitle = function (p) {
+      var tp = Math.min(Math.max((p - 0.04) / 0.5, 0), 1);
+      if (tp >= 1) { title.style.opacity = ""; title.style.filter = ""; title.style.transform = ""; return; }
+      if (tp <= 0) {
+        title.style.opacity = String(MIN);
+        title.style.filter = "url(#sv-smoke) blur(22px)";
+        if (smokeMap) smokeMap.setAttribute("scale", "160");
+        title.style.transform = "scale(1.1)";
+        return;
       }
+      var e = Math.pow(1 - tp, 1.3);
+      title.style.opacity = (MIN + (1 - MIN) * tp).toFixed(3);
+      title.style.filter = "url(#sv-smoke) blur(" + (22 * e).toFixed(1) + "px)";
+      if (smokeMap) smokeMap.setAttribute("scale", String(Math.round(160 * e)));
+      title.style.transform = "scale(" + (1 + 0.1 * e).toFixed(3) + ")";
     };
 
     var compute = function () {
       var y = Math.min(Math.max(scrollY - top, 0), range), p = y / range;
-      if (p !== lastP) { lastP = p; paintText(p); }
+      if (p !== lastP) { lastP = p; paintTitle(p); }
       target = dur * p;
       if (dur) kick();
     };
@@ -104,7 +104,7 @@ if (svs.length) {
       if (Math.abs(target - cur) > EPS || video.seeking) kick();
     };
 
-    paintText(0);
+    paintTitle(0);
     video.addEventListener("loadedmetadata", onMeta, { once: true });
     // Só carrega o vídeo pesado quando a seção está a ~2 telas de distância.
     if ("IntersectionObserver" in window) {

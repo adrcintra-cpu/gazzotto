@@ -120,8 +120,11 @@ if (reduced) {
       .catch(function () {});
   } catch (e) {}
 
-  // Título: cresce, ganha blur + distorção (turbulência) e se dissolve como fumaça (ou o inverso, na entrada).
-  function renderSmoke(p) {
+  // Título: cresce, ganha blur + distorção (turbulência) e se dissolve como fumaça.
+  function applySmoke(y) {
+    var p = Math.min(Math.max(y / smokePx, 0), 1);
+    if (p === smokeP) return;
+    smokeP = p;
     if (p === 0) {
       title.style.transform = title.style.filter = title.style.opacity = "";
       rest.style.transform = rest.style.filter = rest.style.opacity = "";
@@ -137,29 +140,6 @@ if (reduced) {
     rest.style.filter = "blur(" + (9 * r).toFixed(1) + "px)";
     rest.style.opacity = String(1 - r);
   }
-  function applySmoke(y) {
-    var p = Math.min(Math.max(y / smokePx, 0), 1);
-    if (p === smokeP) return;
-    smokeP = p;
-    renderSmoke(p);
-  }
-
-  // Entrada: o título nasce em fumaça (borrado/distorcido) e se resolve em texto nítido,
-  // uma única vez, ao carregar a página — antes de o efeito de rolagem (acima) assumir.
-  var introActive = true;
-  function introReveal() {
-    var dur = 1300, start = null;
-    function step(ts) {
-      if (!introActive) return;
-      if (start === null) start = ts;
-      var t = Math.min((ts - start) / dur, 1);
-      var eased = 1 - Math.pow(1 - t, 3);
-      renderSmoke(1 - eased);
-      if (t < 1) requestAnimationFrame(step);
-      else { introActive = false; smokeP = 0; }
-    }
-    requestAnimationFrame(step);
-  }
 
   function compute() {
     var y = Math.min(Math.max(scrollY - sectionTop, 0), range);
@@ -168,8 +148,7 @@ if (reduced) {
     if (blobUrl && !swapped && f === 0) trySwap();
     if (f > 0) prime();
     if (f >= 1) { if (!v1.paused) v1.pause(); } else if (v1.paused) { v1.play().catch(function () {}); }
-    if (introActive && y > 2) introActive = false;
-    if (!introActive) applySmoke(y);
+    applySmoke(y);
     prog = Math.min(Math.max((y - fadePx) / Math.max(1, range - fadePx), 0), 1);
     targetTime = duration * prog;
     if (duration) kick();
@@ -190,7 +169,6 @@ if (reduced) {
   document.addEventListener("visibilitychange", function () { if (!document.hidden && fade < 1 && v1.paused) v1.play().catch(function () {}); });
   var pp = v1.play(); if (pp && pp.catch) pp.catch(function () {});
   measure(); onMeta(); compute();
-  introReveal();
 }
 
 })();
