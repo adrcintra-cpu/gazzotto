@@ -89,10 +89,13 @@ const items = media.moments || [];
   transition: opacity .9s cubic-bezier(.16,.84,.44,1), transform .9s cubic-bezier(.16,.84,.44,1);
 }
 .moments__head.is-visible { opacity: 1; transform: translateY(0); }
-.moments__head p { margin-top: .75rem; color: #fff; opacity: .8; font-size: .95rem; max-width: 42ch; margin-inline: auto; }
+.moments__head p {
+  margin-top: .75rem; color: #fff; opacity: .8; margin-inline: auto;
+  white-space: nowrap; font-size: clamp(.62rem, 2.7vw, .95rem);
+}
 
 /* ---- Carrossel ------------------------------------------------------- */
-.moments__carousel { position: relative; margin-top: 116px; outline: none; }
+.moments__carousel { position: relative; margin-top: 58px; outline: none; }
 .moments__carousel:focus-visible { outline: 2px solid var(--fish); outline-offset: 10px; border-radius: 26px; }
 
 .moments__viewport {
@@ -166,7 +169,7 @@ const items = media.moments || [];
 .moments__dot.is-active { background: #fff; transform: scale(1.35); }
 
 @media (max-width: 768px) {
-  .moments__carousel { margin-top: 60px; }
+  .moments__carousel { margin-top: 30px; }
   .moments__card { width: min(88vw, 30rem); min-height: auto; padding: 1.9rem 1.6rem 2.3rem; }
   .moments__quote { font-size: 3.2rem; }
   .moments__arrow { display: none; }
@@ -222,12 +225,14 @@ const items = media.moments || [];
     function measure() {
       var w = viewport.getBoundingClientRect().width || 1;
       step = w * (mqMobile.matches ? 0.84 : 0.73);
+      var cards = slides.map(function (s) { return s.querySelector(".moments__card"); }).filter(Boolean);
+      // Reset any previously-applied uniform height so we measure each card's natural content height.
+      cards.forEach(function (c) { c.style.height = ""; });
       var maxH = 0;
-      slides.forEach(function (s) {
-        var card = s.querySelector(".moments__card");
-        if (card) maxH = Math.max(maxH, card.offsetHeight);
-      });
+      cards.forEach(function (c) { maxH = Math.max(maxH, c.offsetHeight); });
       viewport.style.height = maxH ? maxH + "px" : "";
+      // Stretch every card to the tallest one so all slides align on the stage.
+      cards.forEach(function (c) { if (maxH) c.style.height = maxH + "px"; });
     }
 
     // Mapeia distância (em "unidades de slide", pode ser fracionária durante o arraste)
