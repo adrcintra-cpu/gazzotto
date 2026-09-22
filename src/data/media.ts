@@ -66,8 +66,6 @@ export const media = {
 export const contact = {
   whatsapp: "5519991605930", // ex.: "5511999999999" — habilita o botão "Quero um orçamento"
   email: "", // ex.: "contato@gazzotto.com"
-  instagram: "#",
+  instagram: "https://www.instagram.com/gazzottobbq/",
   facebook: "#",
-  youtube: "#",
-  linkedin: "#",
 };
