@@ -178,8 +178,6 @@ const socials = [
         <form class="form" id="form" method="post" action="#" data-wa={contact.whatsapp} data-mail={contact.email}>
           <label class="sr full" for="f-nome">Nome</label>
           <input class="full" id="f-nome" name="nome" placeholder="Nome" autocomplete="name" required />
-          <label class="sr full" for="f-emp">Empresa</label>
-          <input class="full" id="f-emp" name="empresa" placeholder="Empresa" autocomplete="organization" />
           <label class="sr" for="f-mail">E-mail</label>
           <input id="f-mail" name="email" type="email" placeholder="E-mail" autocomplete="email" required />
           <label class="sr" for="f-tel">Telefone</label>
@@ -313,7 +311,7 @@ const socials = [
     // Troque por Formspree/Resend/endpoint próprio quando houver.
     document.getElementById("form").addEventListener("submit", function (e) {
       var f = e.currentTarget, d = new FormData(f);
-      var txt = "Olá! Meu nome é " + d.get("nome") + (d.get("empresa") ? " (" + d.get("empresa") + ")" : "") +
+      var txt = "Olá! Meu nome é " + d.get("nome") +
         ".\nE-mail: " + d.get("email") + "\nTelefone: " + d.get("telefone") + "\n\n" + d.get("mensagem");
       var wa = f.dataset.wa, mail = f.dataset.mail;
       if (!wa && !mail) return e.preventDefault();
