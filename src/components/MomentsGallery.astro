@@ -53,15 +53,16 @@ const items = media.moments || [];
 .moments__head.is-visible { opacity: 1; transform: translateY(0); }
 .moments__head p { margin-top: .75rem; color: #fff; opacity: .8; font-size: .95rem; max-width: 42ch; margin-inline: auto; }
 
-.moments__scroll { position: relative; height: calc(var(--n, 4) * 48vh); margin-top: 2rem; }
+.moments__scroll { position: relative; height: calc(var(--n, 4) * 48vh); margin-top: 116px; }
 .moments__stage {
-  position: sticky; top: 0; height: 100vh; height: 100svh; display: grid;
+  position: sticky; top: 0; display: grid;
   align-items: center; justify-items: center; overflow: hidden;
-  /* palco ocupa a tela toda para os cards ficarem centralizados verticalmente na viewport
-     durante a animação de pilha (em vez de alinhados ao topo). */
+  /* Altura intrínseca ao conteúdo (não mais 100vh fixo): as camadas se sobrepõem via
+     grid-area em vez de position:absolute/inset:0, então o palco só ocupa a altura do
+     card, sem sobra vertical entre o texto de abertura e o primeiro depoimento. */
 }
 
-.moments__layer { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.moments__layer { position: relative; grid-area: 1 / 1; display: grid; place-items: center; pointer-events: none; }
 .moments__num {
   position: absolute; font: 700 clamp(7rem, 18vw, 14rem)/1 var(--font-display, "Oswald", sans-serif);
   color: var(--fish); opacity: .16; letter-spacing: -.03em; user-select: none; will-change: transform, opacity;
@@ -94,13 +95,13 @@ const items = media.moments || [];
 
 /* Celular: sem pilha/scroll-jack — carrossel horizontal com scroll-snap, um depoimento por vez */
 @media (max-width: 768px) {
-  .moments__scroll { height: auto; margin-top: 1.5rem; }
+  .moments__scroll { height: auto; margin-top: 60px; }
   .moments__stage {
     position: static; height: auto; display: flex; align-items: flex-start; place-items: initial; overflow-x: auto; overflow-y: hidden;
     scroll-snap-type: x mandatory; gap: 1rem; padding: 0 1.2rem 1rem; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .moments__stage::-webkit-scrollbar { display: none; }
-  .moments__layer { position: relative; inset: auto; display: block; flex: 0 0 86vw; scroll-snap-align: center; pointer-events: auto; }
+  .moments__layer { grid-area: auto; display: block; flex: 0 0 86vw; scroll-snap-align: center; pointer-events: auto; }
   .moments__num { display: none; }
   .moments__card { width: 100%; min-height: 60vh; padding: 2rem 1.6rem 2.4rem; transform: none !important; opacity: 1 !important; }
   .moments__quote { font-size: 3.2rem; }
@@ -110,7 +111,7 @@ const items = media.moments || [];
   .moments__head { opacity: 1 !important; transform: none !important; transition: none !important; }
   .moments__scroll { height: auto; }
   .moments__stage { position: static; height: auto; display: grid; gap: 2rem; padding-block: 1rem; place-items: initial; }
-  .moments__layer { position: relative; inset: auto; }
+  .moments__layer { grid-area: auto; }
   .moments__card { width: min(90vw, 40rem); height: auto; min-height: auto; margin-inline: auto; padding: 2.2rem 1.8rem 2.6rem; transform: none !important; opacity: 1 !important; }
   .moments__num { position: static; display: block; text-align: center; opacity: .22; margin-bottom: -2.2rem; }
 }
