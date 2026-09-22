@@ -16,6 +16,7 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
     <canvas id="cine-hold" class="cine__hold" aria-hidden="true"></canvas>
     <div class="cine__copy">
       <div class="wrap">
+        <img class="cine__seal" src="/img/selo.svg" alt="" width="180" height="180" decoding="async" />
         <h1 class="cine__title" id="hero-title"><span>GAZZOTTO BBQ.</span> O verdadeiro churrasco na parrilla, onde você estiver.</h1>
         <div class="cine__rest" id="cine-rest">
           <p>Na Gazzotto BBQ, churrasco é mais do que comida: é experiência. Levamos até você o sabor marcante da parrilla com cortes selecionados, preparo ao vivo e aquele clima que transforma qualquer encontro em um momento memorável.</p>
@@ -43,7 +44,8 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
   background: linear-gradient(90deg, rgb(20 21 24 / .72) 0%, rgb(20 21 24 / .38) 55%, rgb(20 21 24 / .12) 100%),
               linear-gradient(0deg, rgb(20 21 24 / .55), transparent 40%); }
 .cine__copy { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; pointer-events: none; }
-.cine__copy .wrap { pointer-events: none; }
+.cine__copy .wrap { position: relative; pointer-events: none; }
+.cine__seal { position: absolute; top: 0; right: -1rem; z-index: 3; width: clamp(6rem, 10vw, 10rem); height: auto; pointer-events: none; filter: drop-shadow(0 4px 16px rgb(0 0 0 / .45)); }
 .cine__title { font: 700 clamp(2.6rem, 6vw, 5.2rem)/1.05 var(--font-display, "Oswald", sans-serif); color: var(--fish, #f2d7ad);
   max-width: 15ch; transform-origin: 18% 60%; will-change: transform, filter, opacity; text-wrap: balance; }
 .cine__title span { display: block; }
@@ -55,7 +57,7 @@ const VIDEO_2 = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789732490/2_
 .cine__cta i { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 6px; background: var(--fish, #f2d7ad); color: var(--barbecue, #3c1518); }
 .cine__cta:hover { filter: brightness(1.08); }
 /* Celular: o scroll do vídeo dura mais (mais rolagem para percorrer os quadros) */
-@media (max-width: 768px) { .cine { height: 420vh; } }
+@media (max-width: 768px) { .cine { height: 420vh; } .cine__seal { top: -.2rem; right: -.4rem; width: clamp(4rem, 18vw, 5.5rem); } }
 @media (prefers-reduced-motion: reduce) { .cine { height: 100vh; height: 100dvh; } }
 </style>
 
@@ -118,11 +120,8 @@ if (reduced) {
       .catch(function () {});
   } catch (e) {}
 
-  // Título: cresce, ganha blur + distorção (turbulência) e se dissolve como fumaça.
-  function applySmoke(y) {
-    var p = Math.min(Math.max(y / smokePx, 0), 1);
-    if (p === smokeP) return;
-    smokeP = p;
+  // Título: cresce, ganha blur + distorção (turbulência) e se dissolve como fumaça (ou o inverso, na entrada).
+  function renderSmoke(p) {
     if (p === 0) {
       title.style.transform = title.style.filter = title.style.opacity = "";
       rest.style.transform = rest.style.filter = rest.style.opacity = "";
@@ -138,6 +137,29 @@ if (reduced) {
     rest.style.filter = "blur(" + (9 * r).toFixed(1) + "px)";
     rest.style.opacity = String(1 - r);
   }
+  function applySmoke(y) {
+    var p = Math.min(Math.max(y / smokePx, 0), 1);
+    if (p === smokeP) return;
+    smokeP = p;
+    renderSmoke(p);
+  }
+
+  // Entrada: o título nasce em fumaça (borrado/distorcido) e se resolve em texto nítido,
+  // uma única vez, ao carregar a página — antes de o efeito de rolagem (acima) assumir.
+  var introActive = true;
+  function introReveal() {
+    var dur = 1300, start = null;
+    function step(ts) {
+      if (!introActive) return;
+      if (start === null) start = ts;
+      var t = Math.min((ts - start) / dur, 1);
+      var eased = 1 - Math.pow(1 - t, 3);
+      renderSmoke(1 - eased);
+      if (t < 1) requestAnimationFrame(step);
+      else { introActive = false; smokeP = 0; }
+    }
+    requestAnimationFrame(step);
+  }
 
   function compute() {
     var y = Math.min(Math.max(scrollY - sectionTop, 0), range);
@@ -146,7 +168,8 @@ if (reduced) {
     if (blobUrl && !swapped && f === 0) trySwap();
     if (f > 0) prime();
     if (f >= 1) { if (!v1.paused) v1.pause(); } else if (v1.paused) { v1.play().catch(function () {}); }
-    applySmoke(y);
+    if (introActive && y > 2) introActive = false;
+    if (!introActive) applySmoke(y);
     prog = Math.min(Math.max((y - fadePx) / Math.max(1, range - fadePx), 0), 1);
     targetTime = duration * prog;
     if (duration) kick();
@@ -167,6 +190,7 @@ if (reduced) {
   document.addEventListener("visibilitychange", function () { if (!document.hidden && fade < 1 && v1.paused) v1.play().catch(function () {}); });
   var pp = v1.play(); if (pp && pp.catch) pp.catch(function () {});
   measure(); onMeta(); compute();
+  introReveal();
 }
 
 })();
