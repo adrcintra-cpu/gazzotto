@@ -1,10 +1,10 @@
 ---
 /**
- * "Momentos Gazzotto": depoimentos em pilha cinematográfica.
- * Desktop: pilha de cards controlada pelo scroll (cada card sobe, escala e gira levemente
- * enquanto revela o próximo, com numeração grande ao fundo e leve parallax).
- * Mobile: a pilha é desativada e vira um carrossel horizontal com scroll-snap (um depoimento por vez).
- * `prefers-reduced-motion`: vira uma lista simples, sem sobreposição nem JS.
+ * "Momentos Gazzotto": carrossel horizontal de depoimentos.
+ * Card ativo centralizado, com o anterior/próximo espiando nas laterais (efeito "peek").
+ * Navegação por setas, arraste (mouse/trackpad) e swipe (touch); dots indicam a posição.
+ * O scroll vertical da página nunca é afetado — não há scroll-jacking nem sticky gigante.
+ * `prefers-reduced-motion`: mesma navegação, mas sem a transição deslizante (troca instantânea).
  */
 import { media } from "../data/media";
 import Icon from "./Icon.astro";
@@ -17,34 +17,72 @@ const items = media.moments || [];
     <p>Quem já viveu a experiência Gazzotto BBQ conta como foi.</p>
   </div>
   {items.length > 0 && (
-    <div class="moments__scroll" data-momentsscroll style={`--n:${items.length}`}>
-      <div class="moments__stage">
-        {items.map((m, i) => (
-          <div class="moments__layer" style={`z-index:${items.length - i}`}>
-            <span class="moments__num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-            <figure class="moments__card">
-              <span class="moments__quote moments__quote--open" aria-hidden="true">&ldquo;</span>
-              <blockquote class="moments__text">{m.quote}</blockquote>
-              <span class="moments__divider" aria-hidden="true"></span>
-              <div class="moments__stars" aria-hidden="true">★★★★★</div>
-              <figcaption class="moments__attrib">
-                <span class="moments__avatar" aria-hidden="true"><Icon name="user" size={20} /></span>
-                <span class="moments__attrib-text">
-                  <strong>{m.name}</strong>
-                  <span>{m.event}</span>
-                </span>
-              </figcaption>
-              <span class="moments__quote moments__quote--close" aria-hidden="true">&rdquo;</span>
-            </figure>
-          </div>
+    <div
+      class="moments__carousel"
+      data-carousel
+      tabindex="0"
+      role="region"
+      aria-roledescription="carrossel"
+      aria-label="Depoimentos de clientes Gazzotto BBQ"
+    >
+      <div class="moments__viewport" data-viewport>
+        <ul class="moments__track">
+          {items.map((m, i) => (
+            <li
+              class="moments__slide"
+              data-slide
+              data-index={i}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`Depoimento ${i + 1} de ${items.length}`}
+            >
+              <figure class="moments__card">
+                <span class="moments__quote moments__quote--open" aria-hidden="true">&ldquo;</span>
+                <blockquote class="moments__text">{m.quote}</blockquote>
+                <span class="moments__divider" aria-hidden="true"></span>
+                <div class="moments__stars" aria-hidden="true">★★★★★</div>
+                <figcaption class="moments__attrib">
+                  <span class="moments__avatar" aria-hidden="true"><Icon name="user" size={20} /></span>
+                  <span class="moments__attrib-text">
+                    <strong>{m.name}</strong>
+                    <span>{m.event}</span>
+                  </span>
+                </figcaption>
+                <span class="moments__quote moments__quote--close" aria-hidden="true">&rdquo;</span>
+              </figure>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <button class="moments__arrow moments__arrow--prev" data-prev type="button" aria-label="Depoimento anterior">
+        <Icon name="arrow" size={18} />
+      </button>
+      <button class="moments__arrow moments__arrow--next" data-next type="button" aria-label="Próximo depoimento">
+        <Icon name="arrow" size={18} />
+      </button>
+
+      <div class="moments__dots" data-dots role="tablist" aria-label="Selecionar depoimento">
+        {items.map((_, i) => (
+          <button
+            class="moments__dot"
+            data-dot
+            data-index={i}
+            type="button"
+            role="tab"
+            aria-selected={i === 0 ? "true" : "false"}
+            aria-label={`Ir para depoimento ${i + 1}`}
+          ></button>
         ))}
       </div>
+
+      <span class="sr moments__announcer" data-announcer aria-live="polite"></span>
     </div>
   )}
 </section>
 
 <style is:global>
-.moments { background: var(--burger, #d83030); padding-block: 3.5rem 3rem; }
+.moments { background: var(--burger, #d83030); padding-block: 3.5rem 4rem; }
 .moments__head {
   text-align: center; color: #fff; margin-top: 2.5rem;
   opacity: 0; transform: translateY(28px);
@@ -53,23 +91,33 @@ const items = media.moments || [];
 .moments__head.is-visible { opacity: 1; transform: translateY(0); }
 .moments__head p { margin-top: .75rem; color: #fff; opacity: .8; font-size: .95rem; max-width: 42ch; margin-inline: auto; }
 
-.moments__scroll { position: relative; height: calc(var(--n, 4) * 48vh); margin-top: 116px; }
-.moments__stage {
-  position: sticky; top: 0; display: grid;
-  align-items: center; justify-items: center; overflow: hidden;
-  /* Altura intrínseca ao conteúdo (não mais 100vh fixo): as camadas se sobrepõem via
-     grid-area em vez de position:absolute/inset:0, então o palco só ocupa a altura do
-     card, sem sobra vertical entre o texto de abertura e o primeiro depoimento. */
-}
+/* ---- Carrossel ------------------------------------------------------- */
+.moments__carousel { position: relative; margin-top: 116px; outline: none; }
+.moments__carousel:focus-visible { outline: 2px solid var(--fish); outline-offset: 10px; border-radius: 26px; }
 
-.moments__layer { position: relative; grid-area: 1 / 1; display: grid; place-items: center; pointer-events: none; }
-.moments__num {
-  position: absolute; font: 700 clamp(7rem, 18vw, 14rem)/1 var(--font-display, "Oswald", sans-serif);
-  color: var(--fish); opacity: .16; letter-spacing: -.03em; user-select: none; will-change: transform, opacity;
+.moments__viewport {
+  position: relative; overflow: hidden; cursor: grab; touch-action: pan-y;
+  -webkit-user-select: none; user-select: none;
 }
+.moments__viewport.is-dragging { cursor: grabbing; }
+
+.moments__track { position: relative; height: 100%; list-style: none; margin: 0; padding: 0; }
+
+.moments__slide {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  transform: translateX(var(--tx, 0px)) scale(var(--sc, 1));
+  opacity: var(--op, 1);
+  z-index: var(--z, 1);
+  transition: transform .7s cubic-bezier(.22,.75,.24,1), opacity .7s cubic-bezier(.22,.75,.24,1);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.moments__slide.is-active { pointer-events: auto; }
+.moments__viewport.is-dragging .moments__slide { transition: none; }
+
 .moments__card {
-  position: relative; width: min(74vw, 44rem); min-height: min(70vh, 34rem); border-radius: 20px;
-  box-shadow: 0 16px 40px rgb(0 0 0 / .22); will-change: transform, opacity;
+  position: relative; width: min(70vw, 46rem); min-height: min(56vh, 27rem); border-radius: 20px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / .22);
   background: linear-gradient(160deg, #fffaf2 0%, #f3e3c9 100%);
   display: flex; flex-direction: column; justify-content: center;
   padding: clamp(2.2rem, 4vw, 3.5rem);
@@ -93,33 +141,47 @@ const items = media.moments || [];
 .moments__attrib-text strong { display: block; font: 600 1.4rem/1.3 var(--font-display, "Oswald", sans-serif); color: #241c14; letter-spacing: .02em; }
 .moments__attrib-text span { display: block; font: 500 .85rem/1.4 var(--font-body); color: var(--burger); opacity: .85; margin-top: .2rem; }
 
-/* Celular: sem pilha/scroll-jack — carrossel horizontal com scroll-snap, um depoimento por vez */
+/* Setas: minimalistas, na identidade da marca (creme + barbecue), discretas nas laterais */
+.moments__arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 20;
+  width: 2.9rem; height: 2.9rem; border-radius: 50%; display: grid; place-items: center;
+  background: var(--fish); color: var(--barbecue); border: 0; cursor: pointer;
+  box-shadow: 0 10px 26px rgb(0 0 0 / .28);
+  transition: background .25s, transform .25s, opacity .25s;
+}
+.moments__arrow:hover { background: #fff; }
+.moments__arrow:active { transform: translateY(-50%) scale(.92); }
+.moments__arrow[disabled] { opacity: .32; cursor: default; pointer-events: none; }
+.moments__arrow--prev { left: clamp(.25rem, 2.4vw, 1.6rem); }
+.moments__arrow--prev svg { transform: rotate(180deg); }
+.moments__arrow--next { right: clamp(.25rem, 2.4vw, 1.6rem); }
+
+/* Dots */
+.moments__dots { display: flex; justify-content: center; align-items: center; gap: .6rem; margin-top: 1.8rem; }
+.moments__dot {
+  width: .5rem; height: .5rem; padding: 0; border: 0; border-radius: 50%;
+  background: rgb(255 255 255 / .35); cursor: pointer; transition: background .25s, transform .25s;
+}
+.moments__dot:hover { background: rgb(255 255 255 / .6); }
+.moments__dot.is-active { background: #fff; transform: scale(1.35); }
+
 @media (max-width: 768px) {
-  .moments__scroll { height: auto; margin-top: 60px; }
-  .moments__stage {
-    position: static; height: auto; display: flex; align-items: flex-start; place-items: initial; overflow-x: auto; overflow-y: hidden;
-    scroll-snap-type: x mandatory; gap: 1rem; padding: 0 1.2rem 1rem; -webkit-overflow-scrolling: touch; scrollbar-width: none;
-  }
-  .moments__stage::-webkit-scrollbar { display: none; }
-  .moments__layer { grid-area: auto; display: block; flex: 0 0 86vw; scroll-snap-align: center; pointer-events: auto; }
-  .moments__num { display: none; }
-  .moments__card { width: 100%; min-height: 60vh; padding: 2rem 1.6rem 2.4rem; transform: none !important; opacity: 1 !important; }
+  .moments__carousel { margin-top: 60px; }
+  .moments__card { width: min(88vw, 30rem); min-height: auto; padding: 1.9rem 1.6rem 2.3rem; }
   .moments__quote { font-size: 3.2rem; }
+  .moments__arrow { display: none; }
+  .moments__dots { margin-top: 1.4rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .moments__head { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .moments__scroll { height: auto; }
-  .moments__stage { position: static; height: auto; display: grid; gap: 2rem; padding-block: 1rem; place-items: initial; }
-  .moments__layer { grid-area: auto; }
-  .moments__card { width: min(90vw, 40rem); height: auto; min-height: auto; margin-inline: auto; padding: 2.2rem 1.8rem 2.6rem; transform: none !important; opacity: 1 !important; }
-  .moments__num { position: static; display: block; text-align: center; opacity: .22; margin-bottom: -2.2rem; }
+  .moments__slide { transition: none !important; }
 }
 </style>
 
 <script>
 (function () {
-  // Título/texto da seção: aparecem (fade + leve subida) quando entram na tela.
+  // Título/subtítulo: fade + leve subida ao entrar na tela (independente do carrossel).
   var heads = Array.prototype.slice.call(document.querySelectorAll(".moments__head"));
   if (heads.length) {
     if ("IntersectionObserver" in window) {
@@ -132,92 +194,157 @@ const items = media.moments || [];
     }
   }
 
-  var scrolls = Array.prototype.slice.call(document.querySelectorAll("[data-momentsscroll]"));
-  if (!scrolls.length) return;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var roots = Array.prototype.slice.call(document.querySelectorAll("[data-carousel]"));
+  if (!roots.length) return;
 
-  var mqDesktop = matchMedia("(min-width: 769px)");
-  var smoothstep = function (t) { return t * t * (3 - 2 * t); };
   var clamp = function (v, a, b) { return Math.min(Math.max(v, a), b); };
+  var mqMobile = matchMedia("(max-width: 768px)");
+  var mqReduced = matchMedia("(prefers-reduced-motion: reduce)");
 
-  scrolls.forEach(function (scrollEl) {
-    var stageEl = scrollEl.querySelector(".moments__stage");
-    var cards = Array.prototype.slice.call(scrollEl.querySelectorAll(".moments__card"));
-    var nums = Array.prototype.slice.call(scrollEl.querySelectorAll(".moments__num"));
-    var N = cards.length;
-    if (!N) return;
+  roots.forEach(function (root) {
+    var viewport = root.querySelector("[data-viewport]");
+    var slides = Array.prototype.slice.call(root.querySelectorAll("[data-slide]"));
+    var dots = Array.prototype.slice.call(root.querySelectorAll("[data-dot]"));
+    var prevBtn = root.querySelector("[data-prev]");
+    var nextBtn = root.querySelector("[data-next]");
+    var announcer = root.querySelector("[data-announcer]");
+    var N = slides.length;
+    if (!N || !viewport) return;
 
-    var EXIT_PX = 130, ROT_DEG = 1.6, ENTRANCE_PX = 46, LERP = 0.26, EPS = 0.0008;
-    var top = 0, range = 1, raw = 0, smoothed = 0, raf = 0, near = false;
+    var active = 0;
+    var step = 0;
+    var dragging = false;
+    var pointerId = null;
+    var startX = 0;
+    var dragPx = 0;
+    var dragged = false;
 
-    var measure = function () {
-      top = scrollEl.getBoundingClientRect().top + scrollY;
-      // usa a altura real do palco (não a da janela): o palco tem 70vh, então o scroll
-      // "preso" (sticky) dura (altura do bloco - altura do palco), não (altura do bloco - vh)
-      var stageH = (stageEl && stageEl.offsetHeight) || innerHeight;
-      range = Math.max(1, scrollEl.offsetHeight - stageH);
-    };
+    function measure() {
+      var w = viewport.getBoundingClientRect().width || 1;
+      step = w * (mqMobile.matches ? 0.84 : 0.73);
+      var maxH = 0;
+      slides.forEach(function (s) {
+        var card = s.querySelector(".moments__card");
+        if (card) maxH = Math.max(maxH, card.offsetHeight);
+      });
+      viewport.style.height = maxH ? maxH + "px" : "";
+    }
 
-    var resetMobile = function () {
-      cards.forEach(function (c) { c.style.transform = ""; c.style.opacity = ""; });
-      nums.forEach(function (n) { n.style.transform = ""; n.style.opacity = ""; });
-      raw = 0; smoothed = 0;
-    };
+    // Mapeia distância (em "unidades de slide", pode ser fracionária durante o arraste)
+    // para transform/opacidade/z-index, com interpolação suave até 2 posições de distância.
+    function paintFor(dist) {
+      var a = clamp(Math.abs(dist), 0, 2);
+      var scale, opacity;
+      if (a <= 1) { scale = 1 - 0.07 * a; opacity = 1 - 0.45 * a; }
+      else { scale = 0.93 - 0.05 * (a - 1); opacity = Math.max(0, 0.55 - 0.55 * (a - 1)); }
+      return { tx: dist * step, scale: scale, opacity: opacity, z: Math.round(10 - a * 3) };
+    }
 
-    var paint = function (S) {
-      for (var i = 0; i < N; i++) {
-        var ownE = smoothstep(clamp(S - i, 0, 1));
-        var incoming = i === 0 ? 1 : smoothstep(clamp(S - (i - 1), 0, 1));
-        var entT = (1 - incoming) * ENTRANCE_PX;
-        var entS = (1 - incoming) * 0.04;
-        var exitT = -ownE * EXIT_PX;
-        var exitS = ownE * 0.08;
-        var rot = ownE * (i % 2 === 0 ? ROT_DEG : -ROT_DEG);
-        var op = 1 - ownE;
-        var scale = 1 - entS - exitS;
-        cards[i].style.transform = "translateY(" + (entT + exitT).toFixed(2) + "px) scale(" + scale.toFixed(4) + ") rotate(" + rot.toFixed(3) + "deg)";
-        cards[i].style.opacity = op.toFixed(3);
-        if (nums[i]) {
-          nums[i].style.transform = "translateY(" + (exitT * 0.4).toFixed(2) + "px)";
-          nums[i].style.opacity = (0.16 * (1 - ownE)).toFixed(3);
-        }
+    function render() {
+      slides.forEach(function (s, i) {
+        var dist = (i - active) - (dragPx / (step || 1));
+        var p = paintFor(dist);
+        s.style.setProperty("--tx", p.tx.toFixed(2) + "px");
+        s.style.setProperty("--sc", p.scale.toFixed(4));
+        s.style.setProperty("--op", p.opacity.toFixed(3));
+        s.style.setProperty("--z", String(p.z));
+        var isActive = i === active;
+        s.classList.toggle("is-active", isActive);
+        s.setAttribute("aria-hidden", isActive ? "false" : "true");
+      });
+    }
+
+    function updateControls() {
+      dots.forEach(function (d, i) {
+        var isActive = i === active;
+        d.classList.toggle("is-active", isActive);
+        d.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      if (prevBtn) prevBtn.toggleAttribute("disabled", active === 0);
+      if (nextBtn) nextBtn.toggleAttribute("disabled", active === N - 1);
+      if (announcer) {
+        var m = media_moments_names[active];
+        announcer.textContent = "Depoimento " + (active + 1) + " de " + N + (m ? ": " + m : "");
       }
-    };
+    }
 
-    var kick = function () { if (!raf) raf = requestAnimationFrame(tick); };
-    var tick = function () {
-      raf = 0;
-      var d = raw - smoothed;
-      if (Math.abs(d) < EPS) smoothed = raw; else smoothed += d * LERP;
-      paint(smoothed);
-      if (Math.abs(raw - smoothed) > EPS) kick();
-    };
-    var compute = function () {
-      if (!near || !mqDesktop.matches) return;
-      var y = clamp(scrollY - top, 0, range);
-      raw = (y / range) * (N - 1);
-      kick();
-    };
+    // Nomes para o anúncio de acessibilidade (lido do DOM, sem duplicar dados).
+    var media_moments_names = slides.map(function (s) {
+      var strong = s.querySelector(".moments__attrib-text strong");
+      return strong ? strong.textContent : "";
+    });
 
-    if ("IntersectionObserver" in window) {
-      new IntersectionObserver(function (es) {
-        near = es[0].isIntersecting;
-        if (near && mqDesktop.matches) { measure(); compute(); }
-      }, { rootMargin: "200% 0px" }).observe(scrollEl);
-    } else { near = true; }
+    function goTo(i) {
+      active = clamp(i, 0, N - 1);
+      dragPx = 0;
+      render();
+      updateControls();
+    }
+    function goPrev() { if (active > 0) goTo(active - 1); }
+    function goNext() { if (active < N - 1) goTo(active + 1); }
 
-    addEventListener("scroll", compute, { passive: true });
-    addEventListener("resize", function () { if (mqDesktop.matches) { measure(); compute(); } }, { passive: true });
+    if (prevBtn) prevBtn.addEventListener("click", goPrev);
+    if (nextBtn) nextBtn.addEventListener("click", goNext);
+    dots.forEach(function (d, i) { d.addEventListener("click", function () { goTo(i); }); });
 
-    var onModeChange = function () {
-      if (mqDesktop.matches) { measure(); compute(); }
-      else { resetMobile(); }
-    };
-    if (mqDesktop.addEventListener) mqDesktop.addEventListener("change", onModeChange);
-    else if (mqDesktop.addListener) mqDesktop.addListener(onModeChange);
+    root.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+    });
+
+    // Arraste (mouse/trackpad) e swipe (touch) via Pointer Events unificados.
+    function onPointerDown(e) {
+      if (e.button != null && e.button !== 0) return;
+      dragging = true; dragged = false; startX = e.clientX; dragPx = 0; pointerId = e.pointerId;
+      try { viewport.setPointerCapture(pointerId); } catch (err) {}
+      viewport.classList.add("is-dragging");
+    }
+    function onPointerMove(e) {
+      if (!dragging || e.pointerId !== pointerId) return;
+      var dx = e.clientX - startX;
+      if (Math.abs(dx) > 4) dragged = true;
+      if ((active === 0 && dx > 0) || (active === N - 1 && dx < 0)) dx *= 0.35; // resistência nas pontas
+      dragPx = dx;
+      render();
+    }
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      viewport.classList.remove("is-dragging");
+      var threshold = step * 0.18;
+      if (dragPx <= -threshold && active < N - 1) active++;
+      else if (dragPx >= threshold && active > 0) active--;
+      dragPx = 0;
+      render();
+      updateControls();
+    }
+    viewport.addEventListener("pointerdown", onPointerDown);
+    viewport.addEventListener("pointermove", onPointerMove);
+    viewport.addEventListener("pointerup", endDrag);
+    viewport.addEventListener("pointercancel", endDrag);
+    viewport.addEventListener("click", function (e) { if (dragged) { e.preventDefault(); e.stopPropagation(); } }, true);
+
+    // Scroll horizontal do trackpad (opcional): só intercepta gesto claramente horizontal,
+    // nunca o scroll vertical da página.
+    var wheelLock = false;
+    viewport.addEventListener("wheel", function (e) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 6) {
+        e.preventDefault();
+        if (wheelLock) return;
+        wheelLock = true;
+        if (e.deltaX > 0) goNext(); else goPrev();
+        setTimeout(function () { wheelLock = false; }, 450);
+      }
+    }, { passive: false });
+
+    addEventListener("resize", function () { measure(); render(); }, { passive: true });
+    mqMobile.addEventListener ? mqMobile.addEventListener("change", function () { measure(); render(); }) : mqMobile.addListener(function () { measure(); render(); });
+
+    if (mqReduced.matches) root.querySelectorAll(".moments__slide").forEach(function (s) { s.style.transition = "none"; });
 
     measure();
-    if (mqDesktop.matches) compute();
+    render();
+    updateControls();
   });
 })();
 </script>
