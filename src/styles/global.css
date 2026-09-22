@@ -29,7 +29,7 @@
   --fish: #f2d7ad;
 
   --bg: #25272c; /* cinza original (antes verde Mex & Veg) */
-  --bg-dark: #16171a; /* fundo mais escuro: Cardápios e vídeo do burger */
+  --bg-dark: #0f1214; /* fundo mais escuro: Cardápios e vídeo do burger */
   --bg-2: var(--barbecue);
   --card: #2e3036;
   --card-2: #4a4d55;
@@ -152,8 +152,13 @@ section { scroll-margin-top: 4.5rem; }
    ao fim da coluna de texto (perto do botão "Quero um orçamento"). O fundo/recorte de ticket
    fica num ::before por trás (z-index -2), então a imagem, ancorada pela base e maior que a
    coluna, aparece por cima sem ser cortada pelo card. */
-.events__art .mascot { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%) scaleX(1.56); transform-origin: center; display: block; line-height: 0; }
-.events__art .mascot img { display: block; max-height: 36rem; width: auto; }
+.events__art .mascot { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); transform-origin: center; display: block; line-height: 0; }
+/* "max-width: none" anula o reset global (img { max-width: 100% }), que limitava a largura pela
+   largura do container — como a altura (max-height) não mudava por breakpoint, mas a largura
+   ficava presa ao container (mais estreito no mobile), o mascote "compactava" (esticava menos)
+   em telas menores. Sem esse limite, a largura só depende da altura e da proporção da imagem,
+   então o formato fica fixo em qualquer tela (por isso o scaleX manual acima também saiu). */
+.events__art .mascot img { display: block; max-height: 36rem; width: auto; max-width: none; }
 @media (max-width: 860px) { .events__art { align-self: auto; height: 30rem; } }
 
 /* Piscar de olhos: duas "pálpebras" (cor do pelo ao redor dos olhos) posicionadas por porcentagem
@@ -178,7 +183,12 @@ section { scroll-margin-top: 4.5rem; }
 
 /* Cardápios */
 .events, .menus, .diffs, .contact { scroll-margin-top: 3.5rem; }
-.menus { padding: 4rem 0; background: var(--bg-dark); }
+.menus {
+  padding: 4rem 0; background: var(--bg-dark);
+  /* fica acima do vídeo do burger (que sobe com margin-top negativo), cobrindo os 10% de
+     sobreposição — assim o vídeo nasce "por baixo" do Cardápio, sem nenhuma emenda visível. */
+  position: relative; z-index: 2;
+}
 .menus__grid { margin-top: 2.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; align-items: start; }
 /* Cardápios: painel frontal sobe e o painel do cardápio desliza para o lugar (efeito "slide" no hover) */
 .menu { --m-bg: var(--card); --m-fg: var(--fish); position: relative; height: 16rem; overflow: hidden; transition: height .7s cubic-bezier(.2, .7, .2, 1); border-radius: 14px; border: 1px solid var(--line); background: var(--m-bg); color: var(--m-fg); cursor: pointer; outline-offset: 4px; }

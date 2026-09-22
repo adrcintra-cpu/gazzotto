@@ -1,9 +1,10 @@
 ---
 /**
  * Etapa "Não é só burger": vídeo controlado pelo scroll (frame a frame, reversível, suavizado por rAF)
- * com o título aparecendo palavra a palavra. URL do Cloudinary usado exatamente como fornecido.
+ * com o título aparecendo palavra a palavra.
+ * Vídeo local em public/video/burger.mp4 (trocado a pedido do cliente; antes vinha do Cloudinary).
  */
-const VIDEO = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789949625/movie_scof6k.mp4";
+const VIDEO = "/video/burger.mp4";
 ---
 <section class="sv" data-scrubvideo aria-labelledby="sv-title">
   <div class="sv__stage">
@@ -18,16 +19,23 @@ const VIDEO = "https://res.cloudinary.com/ptx05pwt/video/upload/v1789949625/movi
 <noscript><style>.sv { height: 100vh; } .sv__stage { position: relative; top: 0; }</style></noscript>
 
 <style is:global>
-.sv { position: relative; height: 260vh; background: var(--bg-dark, #16171a); }
-.sv__stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--bg-dark, #16171a);
+.sv {
+  position: relative; height: 260vh;
+  /* "borda infinita" com o Cardápio: o vídeo entra 10% por baixo dessa seção anterior
+     (que cobre esse trecho, graças ao z-index dela). Já com o Momentos, a transição fica
+     encostada mas com borda reta (sem degradê/blur) — o palco vermelho começa numa linha
+     limpa, a pedido do cliente. */
+  margin-top: -10vh;
+  background: var(--bg-dark, #0f1214);
+}
+.sv__stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--bg-dark, #0f1214);
   /* bordas "infinitas": o vídeo se dissolve no fundo da página em cima e embaixo (mesma cor da seção, sem gradiente/sombra) */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%); }
 .sv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; background: #000; }
-/* Desktop: a proporção do vídeo (mais "quadrada") é bem diferente da tela (bem mais larga), e o "cover"
-   cortava o hambúrguer em cima/embaixo nos quadros em que os ingredientes ficam mais espalhados.
-   Com "contain" o vídeo aparece inteiro (sobra fundo dos lados, que já combina com o gradiente da seção). */
-@media (min-width: 769px) { .sv__video { object-fit: contain; } }
+/* "cover" em todas as telas: o vídeo preenche 100% da altura do palco (sem tarjas/letterbox em
+   cima ou embaixo). Era "contain" no desktop por causa do vídeo antigo (proporção mais "quadrada",
+   que cortava o hambúrguer com "cover"); o vídeo atual (1920x1080) preenche bem com "cover". */
 .sv__copy { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0 1rem; pointer-events: none; }
 .sv__title { font: 500 clamp(1.15rem, 3.4vw, 2.2rem)/1.25 var(--font-display, "Oswald", sans-serif); letter-spacing: .05em; color: #fff; text-align: center; white-space: normal; text-wrap: balance; }
 @media (min-width: 700px) { .sv__title { white-space: nowrap; } }
