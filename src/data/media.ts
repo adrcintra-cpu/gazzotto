@@ -56,7 +56,7 @@ export const media = {
     {
       quote:
         "A parrilla acontecendo ao vivo fez toda a diferença. Além da comida excelente, criou aquele clima de reunir as pessoas em volta do fogo. Foi um dos pontos altos do nosso evento.",
-      name: "Gustavo e Camila Ferreira",
+      name: "André Cintra",
       event: "Confraternização",
     },
   ],
