@@ -670,7 +670,8 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__exp-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 8px; background: var(--icon-bg); color: var(--logo); margin-bottom: .8rem; }
 .wiz__exp-card h4 { font: 700 1rem var(--font-body); margin-bottom: .3rem; }
 .wiz__exp-card p { font-size: .78rem; color: var(--muted); }
-@media (max-width: 760px) { .wiz__exp-cards { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .wiz__exp-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .wiz__exp-cards { grid-template-columns: 1fr; } }
 
 /* Etapa 2 */
 .wiz__cat { margin-bottom: 1.8rem; }
