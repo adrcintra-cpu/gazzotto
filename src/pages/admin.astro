@@ -4,10 +4,32 @@ import { supabaseConfig } from "../data/media";
 ---
 <Layout title="Painel | Gazzotto BBQ" description="Painel interno — leads e notificações." noindex>
   <main class="admin" id="admin-root">
+    <!-- LOGIN -->
+    <section class="admin__login" data-view="login">
+      <form class="admin__login-card" data-login-form>
+        <h1>Painel Gazzotto BBQ</h1>
+        <p class="admin__hint">Entre com seu e-mail e senha de acesso.</p>
+        <label class="admin__field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="username" required />
+        </label>
+        <label class="admin__field">
+          <span>Senha</span>
+          <input type="password" name="senha" autocomplete="current-password" required />
+        </label>
+        <p class="admin__erro" data-login-erro hidden></p>
+        <button type="submit" class="btn btn--red">Entrar</button>
+      </form>
+    </section>
+
     <!-- PAINEL -->
-    <section class="admin__panel" data-view="panel">
+    <section class="admin__panel" data-view="panel" hidden>
       <header class="admin__bar">
         <h1>Painel Gazzotto BBQ</h1>
+        <div class="admin__bar-actions">
+          <span class="admin__user" data-usuario-logado></span>
+          <button type="button" class="admin__btn-ghost" data-logout>Sair</button>
+        </div>
       </header>
 
       <nav class="admin__tabs" aria-label="Seções do painel">
@@ -66,6 +88,10 @@ import { supabaseConfig } from "../data/media";
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const root = document.getElementById("admin-root");
+  const loginView = root.querySelector('[data-view="login"]');
+  const panelView = root.querySelector('[data-view="panel"]');
+  const loginForm = root.querySelector("[data-login-form]");
+  const loginErro = root.querySelector("[data-login-erro]");
 
   const MODALIDADE_LABELS = {
     pacote: "Cardápios Gazzotto",
@@ -73,8 +99,57 @@ import { supabaseConfig } from "../data/media";
     festival_hamburguer: "Festival de Hambúrguer",
   };
 
-  carregarLeads();
-  carregarContatos();
+  let carregado = false;
+
+  function mostrarLogin() {
+    panelView.hidden = true;
+    loginView.hidden = false;
+    carregado = false;
+  }
+
+  function mostrarPainel(email) {
+    loginView.hidden = true;
+    panelView.hidden = false;
+    root.querySelector("[data-usuario-logado]").textContent = email || "";
+    if (!carregado) {
+      carregado = true;
+      carregarLeads();
+      carregarContatos();
+    }
+  }
+
+  // ---------- Sessão ----------
+  async function verificarSessao() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) mostrarPainel(session.user.email);
+    else mostrarLogin();
+  }
+  verificarSessao();
+
+  supabase.auth.onAuthStateChange((_evento, session) => {
+    if (session) mostrarPainel(session.user.email);
+    else mostrarLogin();
+  });
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginErro.hidden = true;
+    const fd = new FormData(loginForm);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: fd.get("email"),
+      password: fd.get("senha"),
+    });
+    if (error) {
+      loginErro.textContent = "E-mail ou senha incorretos.";
+      loginErro.hidden = false;
+      return;
+    }
+    loginForm.reset();
+  });
+
+  root.querySelector("[data-logout]").addEventListener("click", async () => {
+    await supabase.auth.signOut();
+  });
 
   // ---------- Abas ----------
   root.querySelectorAll("[data-tab]").forEach((tab) => {
@@ -178,6 +253,14 @@ import { supabaseConfig } from "../data/media";
 .admin { min-height: 100vh; padding: 6rem 1.5rem 4rem; max-width: 1100px; margin-inline: auto; }
 
 .admin__hint { font-size: .8rem; color: var(--muted); }
+
+.admin__login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.admin__login-card { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 1rem; background: color-mix(in srgb, var(--bg-dark) 92%, white 8%); border: 1px solid var(--line); border-radius: 14px; padding: 2rem 1.75rem; }
+.admin__login-card h1 { font: 400 1.3rem var(--font-display); color: var(--cream); text-align: center; }
+.admin__login-card .admin__hint { text-align: center; margin-top: -.5rem; }
+.admin__field { display: flex; flex-direction: column; gap: .4rem; font-size: .8rem; color: var(--muted); }
+.admin__field input { padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; font-size: .9rem; }
+.admin__erro { font-size: .8rem; color: var(--burger); margin: -.3rem 0 0; }
 
 .admin__bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
 .admin__bar h1 { font: 400 1.5rem var(--font-display); color: var(--cream); }
