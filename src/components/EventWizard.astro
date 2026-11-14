@@ -104,11 +104,11 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Endereço ou local</span>
-            <input type="text" name="endereco" />
+            <input type="text" name="endereco" autocomplete="street-address" />
           </label>
           <label class="wiz__field">
             <span>Cidade</span>
-            <input type="text" name="cidade" />
+            <input type="text" name="cidade" autocomplete="address-level2" />
           </label>
         </fieldset>
 
@@ -116,11 +116,11 @@ import { contact, supabaseConfig } from "../data/media";
           <legend>Convidados</legend>
           <label class="wiz__field">
             <span>Quantidade de adultos *</span>
-            <input type="number" name="qtd_adultos" min="1" step="1" required />
+            <input type="number" name="qtd_adultos" min="1" step="1" required inputmode="numeric" />
           </label>
           <label class="wiz__field">
             <span>Quantidade de crianças</span>
-            <input type="number" name="qtd_criancas" min="0" step="1" value="0" data-qtd-criancas />
+            <input type="number" name="qtd_criancas" min="0" step="1" value="0" data-qtd-criancas inputmode="numeric" />
           </label>
           <label class="wiz__field" data-idades-criancas hidden>
             <span>Idades das crianças</span>
@@ -128,7 +128,7 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Equipe de apoio / fornecedores que precisam de alimentação</span>
-            <input type="number" name="qtd_equipe_apoio" min="0" step="1" value="0" />
+            <input type="number" name="qtd_equipe_apoio" min="0" step="1" value="0" inputmode="numeric" />
           </label>
         </fieldset>
 
@@ -718,6 +718,10 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__fgroup legend { grid-column: 1 / -1; font: 700 .85rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--chicken); margin-bottom: .4rem; padding: 0; }
 .wiz__field { display: flex; flex-direction: column; gap: .35rem; font-size: .78rem; color: var(--muted); }
 .wiz__field--full { grid-column: 1 / -1; }
+/* .wiz__field define display:flex, o que sobrepõe o "display:none" padrão do atributo
+   HTML "hidden" (mesma especificidade, e CSS de autor sempre vence o estilo do navegador).
+   Sem isto, campos condicionais como "Idades das crianças" e "Louças" ficavam sempre visíveis. */
+.wiz__field[hidden] { display: none; }
 .wiz__field input, .wiz__field select, .wiz__field textarea {
   padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
   background: transparent; color: var(--cream); font: inherit; font-size: .85rem;
