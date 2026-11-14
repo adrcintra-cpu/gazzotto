@@ -1,0 +1,277 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { supabaseConfig } from "../data/media";
+---
+<Layout title="Painel | Gazzotto BBQ" description="Painel interno — leads e notificações.">
+  <main class="admin" id="admin-root">
+    <!-- LOGIN -->
+    <section class="admin__login" data-view="login">
+      <form class="admin__login-card" data-login-form>
+        <h1>Painel Gazzotto BBQ</h1>
+        <p class="admin__hint">Acesso restrito à equipe.</p>
+        <label class="admin__field">
+          <span>E-mail</span>
+          <input type="email" name="email" required autocomplete="username" />
+        </label>
+        <label class="admin__field">
+          <span>Senha</span>
+          <input type="password" name="password" required autocomplete="current-password" />
+        </label>
+        <button class="btn btn--red btn--block" type="submit">Entrar</button>
+        <p class="admin__erro" data-login-erro hidden role="alert"></p>
+      </form>
+    </section>
+
+    <!-- PAINEL -->
+    <section class="admin__panel" data-view="panel" hidden>
+      <header class="admin__bar">
+        <h1>Painel Gazzotto BBQ</h1>
+        <div class="admin__bar-actions">
+          <span class="admin__user" data-user-email></span>
+          <button type="button" class="admin__btn-ghost" data-logout>Sair</button>
+        </div>
+      </header>
+
+      <nav class="admin__tabs" aria-label="Seções do painel">
+        <button type="button" class="admin__tab is-active" data-tab="leads">Leads</button>
+        <button type="button" class="admin__tab" data-tab="notificacoes">Notificações WhatsApp</button>
+      </nav>
+
+      <div class="admin__view" data-tab-panel="leads">
+        <div class="admin__toolbar">
+          <h2>Pedidos recebidos</h2>
+          <button type="button" class="admin__btn-ghost" data-reload-leads>Atualizar</button>
+        </div>
+        <div class="admin__table-wrap">
+          <table class="admin__table" data-leads-table>
+            <thead>
+              <tr>
+                <th>Protocolo</th><th>Responsável</th><th>WhatsApp</th><th>Experiência</th>
+                <th>Evento</th><th>Data</th><th>Convidados</th><th>Status</th><th>Recebido em</th>
+              </tr>
+            </thead>
+            <tbody data-leads-body>
+              <tr><td colspan="9" class="admin__loading">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin__view" data-tab-panel="notificacoes" hidden>
+        <div class="admin__toolbar">
+          <h2>Quem recebe o aviso de novo lead no WhatsApp</h2>
+        </div>
+        <p class="admin__hint">
+          Cada novo pedido envia uma mensagem automática para os números ativos abaixo (via Z-API).
+          Desative um contato sem precisar apagar, se for só uma pausa.
+        </p>
+        <form class="admin__add-contato" data-contato-form>
+          <input type="text" name="nome" placeholder="Nome" required />
+          <input type="tel" name="telefone" placeholder="Telefone (ex.: 5519991605930)" required />
+          <button type="submit" class="btn btn--red">Adicionar</button>
+        </form>
+        <div class="admin__table-wrap">
+          <table class="admin__table" data-contatos-table>
+            <thead><tr><th>Nome</th><th>Telefone</th><th>Ativo</th><th></th></tr></thead>
+            <tbody data-contatos-body>
+              <tr><td colspan="4" class="admin__loading">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<script type="module" define:vars={{ SUPABASE_URL: supabaseConfig.url, SUPABASE_KEY: supabaseConfig.publishableKey }}>
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const root = document.getElementById("admin-root");
+  const loginView = root.querySelector('[data-view="login"]');
+  const panelView = root.querySelector('[data-view="panel"]');
+  const loginForm = root.querySelector("[data-login-form]");
+  const loginErro = root.querySelector("[data-login-erro]");
+
+  const MODALIDADE_LABELS = {
+    pacote: "Cardápios Gazzotto",
+    monte_cardapio: "Monte seu Cardápio",
+    festival_hamburguer: "Festival de Hambúrguer",
+  };
+
+  function showPanel(session) {
+    loginView.hidden = true;
+    panelView.hidden = false;
+    root.querySelector("[data-user-email]").textContent = session.user.email;
+    carregarLeads();
+    carregarContatos();
+  }
+
+  function showLogin() {
+    loginView.hidden = false;
+    panelView.hidden = true;
+  }
+
+  supabase.auth.getSession().then(({ data }) => {
+    if (data.session) showPanel(data.session);
+  });
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) showPanel(session); else showLogin();
+  });
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginErro.hidden = true;
+    const fd = new FormData(loginForm);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: fd.get("email"),
+      password: fd.get("password"),
+    });
+    if (error) {
+      loginErro.textContent = "E-mail ou senha incorretos.";
+      loginErro.hidden = false;
+    }
+  });
+
+  root.querySelector("[data-logout]").addEventListener("click", async () => {
+    await supabase.auth.signOut();
+  });
+
+  // ---------- Abas ----------
+  root.querySelectorAll("[data-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      root.querySelectorAll("[data-tab]").forEach((t) => t.classList.toggle("is-active", t === tab));
+      root.querySelectorAll("[data-tab-panel]").forEach((p) => { p.hidden = p.dataset.tabPanel !== tab.dataset.tab; });
+    });
+  });
+
+  // ---------- Leads ----------
+  async function carregarLeads() {
+    const body = root.querySelector("[data-leads-body]");
+    body.innerHTML = '<tr><td colspan="9" class="admin__loading">Carregando…</td></tr>';
+    const { data, error } = await supabase
+      .from("orcamentos")
+      .select("protocolo, nome_responsavel, whatsapp, modalidade, tipo_evento, data_evento, qtd_adultos, qtd_criancas, status, criado_em")
+      .order("criado_em", { ascending: false });
+    if (error) {
+      body.innerHTML = '<tr><td colspan="9" class="admin__erro-cel">Erro ao carregar: ' + error.message + "</td></tr>";
+      return;
+    }
+    if (!data.length) {
+      body.innerHTML = '<tr><td colspan="9" class="admin__loading">Nenhum pedido recebido ainda.</td></tr>';
+      return;
+    }
+    body.innerHTML = data.map((o) => `
+      <tr>
+        <td>${o.protocolo}</td>
+        <td>${o.nome_responsavel}</td>
+        <td><a href="https://wa.me/${o.whatsapp}" target="_blank" rel="noopener">${o.whatsapp}</a></td>
+        <td>${MODALIDADE_LABELS[o.modalidade] || o.modalidade}</td>
+        <td>${o.tipo_evento || "-"}</td>
+        <td>${o.data_evento ? new Date(o.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "-"}</td>
+        <td>${o.qtd_adultos || 0}${o.qtd_criancas ? " + " + o.qtd_criancas + "c" : ""}</td>
+        <td><span class="admin__status">${o.status}</span></td>
+        <td>${new Date(o.criado_em).toLocaleString("pt-BR")}</td>
+      </tr>
+    `).join("");
+  }
+  root.querySelector("[data-reload-leads]").addEventListener("click", carregarLeads);
+
+  // ---------- Notificações ----------
+  async function carregarContatos() {
+    const body = root.querySelector("[data-contatos-body]");
+    body.innerHTML = '<tr><td colspan="4" class="admin__loading">Carregando…</td></tr>';
+    const { data, error } = await supabase
+      .from("notificacao_contatos")
+      .select("id, nome, telefone, ativo")
+      .order("criado_em", { ascending: true });
+    if (error) {
+      body.innerHTML = '<tr><td colspan="4" class="admin__erro-cel">Erro ao carregar: ' + error.message + "</td></tr>";
+      return;
+    }
+    if (!data.length) {
+      body.innerHTML = '<tr><td colspan="4" class="admin__loading">Nenhum contato cadastrado.</td></tr>';
+      return;
+    }
+    body.innerHTML = data.map((c) => `
+      <tr data-contato-row="${c.id}">
+        <td>${c.nome}</td>
+        <td>${c.telefone}</td>
+        <td>
+          <label class="admin__switch">
+            <input type="checkbox" data-toggle-ativo="${c.id}" ${c.ativo ? "checked" : ""} />
+            <span>${c.ativo ? "Ativo" : "Pausado"}</span>
+          </label>
+        </td>
+        <td><button type="button" class="admin__btn-ghost admin__btn-small" data-remover="${c.id}">Remover</button></td>
+      </tr>
+    `).join("");
+
+    body.querySelectorAll("[data-toggle-ativo]").forEach((input) => {
+      input.addEventListener("change", async (e) => {
+        const id = e.target.dataset.toggleAtivo;
+        await supabase.from("notificacao_contatos").update({ ativo: e.target.checked }).eq("id", id);
+        carregarContatos();
+      });
+    });
+    body.querySelectorAll("[data-remover]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.remover;
+        if (!confirm("Remover este contato de notificação?")) return;
+        await supabase.from("notificacao_contatos").delete().eq("id", id);
+        carregarContatos();
+      });
+    });
+  }
+
+  root.querySelector("[data-contato-form]").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const fd = new FormData(form);
+    const telefone = fd.get("telefone").toString().replace(/\D/g, "");
+    await supabase.from("notificacao_contatos").insert({ nome: fd.get("nome"), telefone, ativo: true });
+    form.reset();
+    carregarContatos();
+  });
+</script>
+
+<style is:global>
+.admin { min-height: 100vh; padding: 6rem 1.5rem 4rem; max-width: 1100px; margin-inline: auto; }
+
+.admin__login { display: grid; place-items: center; min-height: 70vh; }
+.admin__login-card { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+.admin__login-card h1 { font: 400 1.4rem var(--font-display); color: var(--cream); }
+.admin__hint { font-size: .8rem; color: var(--muted); }
+.admin__field { display: flex; flex-direction: column; gap: .35rem; font-size: .8rem; color: var(--muted); }
+.admin__field input { padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; }
+.admin__erro { color: var(--burger); font-size: .82rem; }
+
+.admin__bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
+.admin__bar h1 { font: 400 1.5rem var(--font-display); color: var(--cream); }
+.admin__bar-actions { display: flex; align-items: center; gap: 1rem; }
+.admin__user { font-size: .8rem; color: var(--muted); }
+.admin__btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--cream); padding: .5rem 1rem; border-radius: 6px; cursor: pointer; font: 600 .78rem var(--font-body); }
+.admin__btn-ghost:hover { border-color: var(--chicken); }
+.admin__btn-small { padding: .3rem .7rem; font-size: .72rem; }
+
+.admin__tabs { display: flex; gap: .5rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
+.admin__tab { background: transparent; border: 0; color: var(--muted); padding: .7rem 1rem; cursor: pointer; font: 600 .82rem var(--font-body); border-bottom: 2px solid transparent; }
+.admin__tab.is-active { color: var(--cream); border-bottom-color: var(--burger); }
+
+.admin__toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+.admin__toolbar h2 { font: 700 1rem var(--font-body); color: var(--cream); }
+
+.admin__table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.admin__table { width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap; }
+.admin__table th, .admin__table td { padding: .65rem .9rem; text-align: left; border-bottom: 1px solid var(--line); color: var(--text); }
+.admin__table th { color: var(--chicken); text-transform: uppercase; font-size: .68rem; letter-spacing: .04em; }
+.admin__table tbody tr:last-child td { border-bottom: 0; }
+.admin__table a { color: var(--chicken); }
+.admin__loading, .admin__erro-cel { color: var(--muted); white-space: normal; }
+.admin__status { text-transform: capitalize; }
+
+.admin__add-contato { display: flex; gap: .6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.admin__add-contato input { padding: .55rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; font-size: .85rem; flex: 1; min-width: 180px; }
+
+.admin__switch { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--muted); cursor: pointer; }
+</style>
