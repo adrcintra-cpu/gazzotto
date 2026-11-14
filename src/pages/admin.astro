@@ -22,6 +22,24 @@ import { supabaseConfig } from "../data/media";
       </form>
     </section>
 
+    <!-- DEFINIR SENHA (primeiro acesso, via convite) -->
+    <section class="admin__login" data-view="definir-senha" hidden>
+      <form class="admin__login-card" data-senha-form>
+        <h1>Defina sua senha</h1>
+        <p class="admin__hint">Você foi convidado para o painel Gazzotto BBQ. Escolha uma senha de acesso.</p>
+        <label class="admin__field">
+          <span>Nova senha</span>
+          <input type="password" name="senha" autocomplete="new-password" minlength="6" required />
+        </label>
+        <label class="admin__field">
+          <span>Confirmar senha</span>
+          <input type="password" name="confirmar" autocomplete="new-password" minlength="6" required />
+        </label>
+        <p class="admin__erro" data-senha-erro hidden></p>
+        <button type="submit" class="btn btn--red">Definir senha e entrar</button>
+      </form>
+    </section>
+
     <!-- PAINEL -->
     <section class="admin__panel" data-view="panel" hidden>
       <header class="admin__bar">
@@ -35,6 +53,7 @@ import { supabaseConfig } from "../data/media";
       <nav class="admin__tabs" aria-label="Seções do painel">
         <button type="button" class="admin__tab is-active" data-tab="leads">Leads</button>
         <button type="button" class="admin__tab" data-tab="notificacoes">Notificações WhatsApp</button>
+        <button type="button" class="admin__tab" data-tab="colaboradores">Colaboradores</button>
       </nav>
 
       <div class="admin__view" data-tab-panel="leads">
@@ -79,6 +98,21 @@ import { supabaseConfig } from "../data/media";
           </table>
         </div>
       </div>
+
+      <div class="admin__view" data-tab-panel="colaboradores" hidden>
+        <div class="admin__toolbar">
+          <h2>Convidar colaborador</h2>
+        </div>
+        <p class="admin__hint">
+          A pessoa recebe um e-mail para criar a própria senha e acessar este painel. Ninguém,
+          nem este sistema, vê ou define a senha dela.
+        </p>
+        <form class="admin__add-contato" data-convite-form>
+          <input type="email" name="email" placeholder="E-mail do colaborador" required />
+          <button type="submit" class="btn btn--red">Enviar convite</button>
+        </form>
+        <p class="admin__erro" data-convite-msg hidden></p>
+      </div>
     </section>
   </main>
 </Layout>
@@ -89,9 +123,16 @@ import { supabaseConfig } from "../data/media";
 
   const root = document.getElementById("admin-root");
   const loginView = root.querySelector('[data-view="login"]');
+  const senhaView = root.querySelector('[data-view="definir-senha"]');
   const panelView = root.querySelector('[data-view="panel"]');
   const loginForm = root.querySelector("[data-login-form]");
   const loginErro = root.querySelector("[data-login-erro]");
+  const senhaForm = root.querySelector("[data-senha-form]");
+  const senhaErro = root.querySelector("[data-senha-erro]");
+
+  // Link de convite/recuperação da Supabase chega com "type=invite" (ou "type=recovery") no
+  // hash da URL — nesse caso, antes de mostrar o painel, pedimos pra pessoa criar a própria senha.
+  let aguardandoSenha = /type=invite|type=recovery/.test(window.location.hash);
 
   const MODALIDADE_LABELS = {
     pacote: "Cardápios Gazzotto",
@@ -103,12 +144,20 @@ import { supabaseConfig } from "../data/media";
 
   function mostrarLogin() {
     panelView.hidden = true;
+    senhaView.hidden = true;
     loginView.hidden = false;
     carregado = false;
   }
 
+  function mostrarDefinirSenha() {
+    panelView.hidden = true;
+    loginView.hidden = true;
+    senhaView.hidden = false;
+  }
+
   function mostrarPainel(email) {
     loginView.hidden = true;
+    senhaView.hidden = true;
     panelView.hidden = false;
     root.querySelector("[data-usuario-logado]").textContent = email || "";
     if (!carregado) {
@@ -121,14 +170,38 @@ import { supabaseConfig } from "../data/media";
   // ---------- Sessão ----------
   async function verificarSessao() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) mostrarPainel(session.user.email);
+    if (session && aguardandoSenha) mostrarDefinirSenha();
+    else if (session) mostrarPainel(session.user.email);
     else mostrarLogin();
   }
   verificarSessao();
 
   supabase.auth.onAuthStateChange((_evento, session) => {
-    if (session) mostrarPainel(session.user.email);
+    if (session && aguardandoSenha) mostrarDefinirSenha();
+    else if (session) mostrarPainel(session.user.email);
     else mostrarLogin();
+  });
+
+  senhaForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    senhaErro.hidden = true;
+    const fd = new FormData(senhaForm);
+    const senha = fd.get("senha");
+    if (senha !== fd.get("confirmar")) {
+      senhaErro.textContent = "As senhas não são iguais.";
+      senhaErro.hidden = false;
+      return;
+    }
+    const { data, error } = await supabase.auth.updateUser({ password: senha });
+    if (error) {
+      senhaErro.textContent = "Não foi possível definir a senha: " + error.message;
+      senhaErro.hidden = false;
+      return;
+    }
+    aguardandoSenha = false;
+    history.replaceState(null, "", window.location.pathname);
+    senhaForm.reset();
+    mostrarPainel(data.user?.email);
   });
 
   loginForm.addEventListener("submit", async (e) => {
@@ -246,6 +319,38 @@ import { supabaseConfig } from "../data/media";
     await supabase.from("notificacao_contatos").insert({ nome: fd.get("nome"), telefone, ativo: true });
     form.reset();
     carregarContatos();
+  });
+
+  // ---------- Convidar colaborador ----------
+  const conviteMsg = root.querySelector("[data-convite-msg]");
+  root.querySelector("[data-convite-form]").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    conviteMsg.hidden = true;
+    const fd = new FormData(form);
+    const email = fd.get("email");
+    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/convidar-colaborador`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ email }),
+      });
+      const resultado = await resp.json();
+      if (!resp.ok || !resultado.ok) throw new Error(resultado.error || "falha ao enviar convite");
+      conviteMsg.textContent = `Convite enviado para ${email}.`;
+      conviteMsg.style.color = "var(--chicken)";
+      conviteMsg.hidden = false;
+      form.reset();
+    } catch (err) {
+      conviteMsg.textContent = "Não foi possível enviar o convite: " + err.message;
+      conviteMsg.style.color = "var(--burger)";
+      conviteMsg.hidden = false;
+    }
   });
 </script>
 
