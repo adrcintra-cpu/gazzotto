@@ -4,32 +4,10 @@ import { supabaseConfig } from "../data/media";
 ---
 <Layout title="Painel | Gazzotto BBQ" description="Painel interno — leads e notificações.">
   <main class="admin" id="admin-root">
-    <!-- LOGIN -->
-    <section class="admin__login" data-view="login">
-      <form class="admin__login-card" data-login-form>
-        <h1>Painel Gazzotto BBQ</h1>
-        <p class="admin__hint">Acesso restrito à equipe.</p>
-        <label class="admin__field">
-          <span>E-mail</span>
-          <input type="email" name="email" required autocomplete="username" />
-        </label>
-        <label class="admin__field">
-          <span>Senha</span>
-          <input type="password" name="password" required autocomplete="current-password" />
-        </label>
-        <button class="btn btn--red btn--block" type="submit">Entrar</button>
-        <p class="admin__erro" data-login-erro hidden role="alert"></p>
-      </form>
-    </section>
-
     <!-- PAINEL -->
-    <section class="admin__panel" data-view="panel" hidden>
+    <section class="admin__panel" data-view="panel">
       <header class="admin__bar">
         <h1>Painel Gazzotto BBQ</h1>
-        <div class="admin__bar-actions">
-          <span class="admin__user" data-user-email></span>
-          <button type="button" class="admin__btn-ghost" data-logout>Sair</button>
-        </div>
       </header>
 
       <nav class="admin__tabs" aria-label="Seções do painel">
@@ -88,10 +66,6 @@ import { supabaseConfig } from "../data/media";
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const root = document.getElementById("admin-root");
-  const loginView = root.querySelector('[data-view="login"]');
-  const panelView = root.querySelector('[data-view="panel"]');
-  const loginForm = root.querySelector("[data-login-form]");
-  const loginErro = root.querySelector("[data-login-erro]");
 
   const MODALIDADE_LABELS = {
     pacote: "Cardápios Gazzotto",
@@ -99,43 +73,8 @@ import { supabaseConfig } from "../data/media";
     festival_hamburguer: "Festival de Hambúrguer",
   };
 
-  function showPanel(session) {
-    loginView.hidden = true;
-    panelView.hidden = false;
-    root.querySelector("[data-user-email]").textContent = session.user.email;
-    carregarLeads();
-    carregarContatos();
-  }
-
-  function showLogin() {
-    loginView.hidden = false;
-    panelView.hidden = true;
-  }
-
-  supabase.auth.getSession().then(({ data }) => {
-    if (data.session) showPanel(data.session);
-  });
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (session) showPanel(session); else showLogin();
-  });
-
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    loginErro.hidden = true;
-    const fd = new FormData(loginForm);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: fd.get("email"),
-      password: fd.get("password"),
-    });
-    if (error) {
-      loginErro.textContent = "E-mail ou senha incorretos.";
-      loginErro.hidden = false;
-    }
-  });
-
-  root.querySelector("[data-logout]").addEventListener("click", async () => {
-    await supabase.auth.signOut();
-  });
+  carregarLeads();
+  carregarContatos();
 
   // ---------- Abas ----------
   root.querySelectorAll("[data-tab]").forEach((tab) => {
@@ -238,13 +177,7 @@ import { supabaseConfig } from "../data/media";
 <style is:global>
 .admin { min-height: 100vh; padding: 6rem 1.5rem 4rem; max-width: 1100px; margin-inline: auto; }
 
-.admin__login { display: grid; place-items: center; min-height: 70vh; }
-.admin__login-card { width: min(380px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
-.admin__login-card h1 { font: 400 1.4rem var(--font-display); color: var(--cream); }
 .admin__hint { font-size: .8rem; color: var(--muted); }
-.admin__field { display: flex; flex-direction: column; gap: .35rem; font-size: .8rem; color: var(--muted); }
-.admin__field input { padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; }
-.admin__erro { color: var(--burger); font-size: .82rem; }
 
 .admin__bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
 .admin__bar h1 { font: 400 1.5rem var(--font-display); color: var(--cream); }

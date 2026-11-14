@@ -635,7 +635,12 @@ import { contact, supabaseConfig } from "../data/media";
 </script>
 
 <style is:global>
-.wiz { padding: 5rem 0; }
+.wiz {
+  padding: 5rem 0;
+  /* fica acima do vídeo do burger (que sobe com margin-top negativo), cobrindo os 10% de
+     sobreposição — mesmo truque do .menus, agora que esta seção passou a vir antes do vídeo. */
+  position: relative; z-index: 2; background: var(--bg);
+}
 .wiz__head { text-align: center; }
 .wiz__tagline { margin-top: .6rem; color: var(--muted); font-size: .95rem; }
 
