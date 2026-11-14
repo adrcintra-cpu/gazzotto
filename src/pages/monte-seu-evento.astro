@@ -1,0 +1,20 @@
+---
+import Layout from "../layouts/Layout.astro";
+import EventWizard from "../components/EventWizard.astro";
+---
+
+<Layout
+  title="Monte seu Evento | Gazzotto BBQ"
+  description="Monte seu evento com a Gazzotto BBQ: escolha a experiência, personalize o cardápio e peça seu orçamento em poucos passos."
+>
+  <div class="wrap wiz-page__back-wrap">
+    <a class="wiz-page__back" href="/">← Voltar para o site</a>
+  </div>
+  <EventWizard />
+</Layout>
+
+<style is:global>
+.wiz-page__back-wrap { padding-top: 2rem; }
+.wiz-page__back { display: inline-block; color: var(--chicken); font: 600 .82rem var(--font-body); text-decoration: none; }
+.wiz-page__back:hover { text-decoration: underline; }
+</style>
