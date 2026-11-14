@@ -90,8 +90,8 @@ import { supabaseConfig } from "../data/media";
     body.innerHTML = '<tr><td colspan="9" class="admin__loading">Carregando…</td></tr>';
     const { data, error } = await supabase
       .from("orcamentos")
-      .select("protocolo, nome_responsavel, whatsapp, modalidade, tipo_evento, data_evento, qtd_adultos, qtd_criancas, status, criado_em")
-      .order("criado_em", { ascending: false });
+      .select("protocolo, nome_responsavel, whatsapp, modalidade, tipo_evento, data_evento, qtd_adultos, qtd_criancas, status, created_at")
+      .order("created_at", { ascending: false });
     if (error) {
       body.innerHTML = '<tr><td colspan="9" class="admin__erro-cel">Erro ao carregar: ' + error.message + "</td></tr>";
       return;
@@ -110,7 +110,7 @@ import { supabaseConfig } from "../data/media";
         <td>${o.data_evento ? new Date(o.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "-"}</td>
         <td>${o.qtd_adultos || 0}${o.qtd_criancas ? " + " + o.qtd_criancas + "c" : ""}</td>
         <td><span class="admin__status">${o.status}</span></td>
-        <td>${new Date(o.criado_em).toLocaleString("pt-BR")}</td>
+        <td>${new Date(o.created_at).toLocaleString("pt-BR")}</td>
       </tr>
     `).join("");
   }
