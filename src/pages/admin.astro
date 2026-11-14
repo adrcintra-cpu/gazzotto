@@ -219,7 +219,7 @@ import { supabaseConfig } from "../data/media";
     e.preventDefault();
     loginErro.hidden = true;
     const fd = new FormData(loginForm);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: fd.get("email"),
       password: fd.get("senha"),
     });
@@ -229,6 +229,9 @@ import { supabaseConfig } from "../data/media";
       return;
     }
     loginForm.reset();
+    // Mostra o painel na hora, sem depender só do onAuthStateChange (no Safari esse aviso
+    // às vezes demora/não dispara a tempo, e a tela ficava voltando pro login em branco).
+    mostrarPainel(data.user?.email);
   });
 
   root.querySelector("[data-logout]").addEventListener("click", async () => {
