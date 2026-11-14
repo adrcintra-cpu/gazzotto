@@ -63,6 +63,15 @@ export const media = {
   story: "/img/story.webp", // foto de fundo do bloco "A Gazzotto BBQ leva até você…"
 };
 
+/**
+ * Google Tag Manager — cole aqui o ID do container (formato "GTM-XXXXXXX") quando
+ * tiver uma conta criada em tagmanager.google.com. Deixe vazio ("") para o site
+ * funcionar normalmente sem nenhum script de rastreio carregado.
+ */
+export const gtmConfig = {
+  containerId: "", // ex.: "GTM-ABC1234"
+};
+
 export const contact = {
   whatsapp: "5519991605930", // ex.: "5511999999999" — habilita o botão "Quero um orçamento"
   email: "", // ex.: "contato@gazzotto.com"

@@ -2,6 +2,6 @@
 import { defineConfig } from "astro/config";
 
 export default defineConfig({
-  // Defina o domínio de produção para gerar canonical/OG absolutos:
-  // site: "https://seu-dominio.com",
+  // Domínio de produção — usado para gerar canonical/OG absolutos e o sitemap.
+  site: "https://gazzotto.com.br",
 });

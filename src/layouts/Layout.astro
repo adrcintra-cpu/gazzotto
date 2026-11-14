@@ -1,8 +1,30 @@
 ---
 import "../styles/global.css";
-interface Props { title: string; description: string }
-const { title, description } = Astro.props;
+import { contact, gtmConfig } from "../data/media";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  noindex?: boolean;
+}
+const { title, description, image = "/img/banner.webp", noindex = false } = Astro.props;
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const ogImage = Astro.site ? new URL(image, Astro.site).href : image;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Gazzotto BBQ",
+  description:
+    "Churrasco à parrilla com atendimento personalizado para eventos corporativos, casamentos, aniversários e confraternizações.",
+  url: Astro.site?.href ?? "https://gazzotto.com.br",
+  image: ogImage,
+  telephone: contact.whatsapp ? `+${contact.whatsapp}` : undefined,
+  sameAs: [contact.instagram, contact.facebook].filter((s) => s && s !== "#"),
+  areaServed: "BR",
+  servesCuisine: "Churrasco, Parrilla",
+};
 ---
 <!doctype html>
 <html lang="pt-BR">
@@ -12,11 +34,23 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content="#25272c" />
+    <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
     {canonical && <link rel="canonical" href={canonical} />}
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Gazzotto BBQ" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={title} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,8 +59,25 @@ const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : un
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    {!noindex && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+
+    {gtmConfig.containerId && (
+      <script set:html={`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmConfig.containerId}');`} />
+    )}
   </head>
   <body>
+    {gtmConfig.containerId && (
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${gtmConfig.containerId}`}
+          height="0"
+          width="0"
+          style="display:none;visibility:hidden"
+          title="Google Tag Manager"
+        ></iframe>
+      </noscript>
+    )}
     <slot />
   </body>
 </html>

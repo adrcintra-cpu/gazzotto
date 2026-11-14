@@ -1,0 +1,106 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { contact } from "../data/media";
+
+const waLink = contact.whatsapp
+  ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Olá! Tenho uma dúvida sobre meus dados / privacidade.")}`
+  : "#";
+
+const atualizadoEm = "14 de novembro de 2026";
+---
+
+<Layout
+  title="Política de Privacidade | Gazzotto BBQ"
+  description="Como a Gazzotto BBQ coleta, usa e protege os dados enviados pelo site, em conformidade com a LGPD."
+>
+  <main class="legal">
+    <div class="wrap legal__wrap">
+      <a class="legal__back" href="/">← Voltar para o site</a>
+      <h1>Política de Privacidade</h1>
+      <p class="legal__atualizado">Última atualização: {atualizadoEm}</p>
+
+      <p>
+        Esta Política de Privacidade explica como a <strong>Gazzotto BBQ</strong> coleta, usa, armazena e protege
+        os dados pessoais de quem visita este site ou solicita um orçamento, em conformidade com a Lei Geral de
+        Proteção de Dados (Lei nº 13.709/2018 — LGPD).
+      </p>
+
+      <h2>1. Quais dados coletamos</h2>
+      <p>Coletamos dados apenas quando você preenche o formulário "Monte seu Evento" ou entra em contato pelo WhatsApp. Podem incluir:</p>
+      <ul>
+        <li>Nome do responsável pelo evento;</li>
+        <li>Número de WhatsApp;</li>
+        <li>Endereço e cidade do evento;</li>
+        <li>Data do evento, quantidade de convidados (adultos e crianças) e equipe de apoio desejada;</li>
+        <li>Cardápio, preferências e observações informadas por você.</li>
+      </ul>
+      <p>Não coletamos dados sensíveis (saúde, origem racial, convicção religiosa, etc.) nem dados de pagamento através do site.</p>
+
+      <h2>2. Para que usamos esses dados</h2>
+      <ul>
+        <li>Elaborar e enviar um orçamento personalizado para o seu evento;</li>
+        <li>Entrar em contato pelo WhatsApp para alinhar detalhes do atendimento;</li>
+        <li>Organizar internamente os pedidos recebidos (painel de acompanhamento da equipe Gazzotto BBQ);</li>
+        <li>Melhorar o site e a experiência de quem o visita (estatísticas de uso, de forma agregada).</li>
+      </ul>
+      <p>Não vendemos nem compartilhamos seus dados com terceiros para fins de marketing de outras empresas.</p>
+
+      <h2>3. Onde seus dados ficam armazenados</h2>
+      <p>
+        Os dados enviados pelo formulário ficam armazenados em banco de dados da <strong>Supabase</strong>
+        (infraestrutura em nuvem, com acesso restrito e criptografado), e o site é hospedado pela <strong>Vercel</strong>.
+        Quando você solicita um orçamento, um aviso automático pode ser enviado por WhatsApp à equipe da Gazzotto BBQ
+        através do serviço <strong>Z-API</strong>, apenas para agilizar o atendimento — nenhum dado é usado por esse
+        serviço para outra finalidade.
+      </p>
+
+      <h2>4. Cookies e ferramentas de análise</h2>
+      <p>
+        Este site pode usar cookies e ferramentas como Google Tag Manager/Analytics para entender, de forma agregada
+        e anônima, como as páginas são visitadas (ex.: quantas pessoas acessam, de qual região, em qual dispositivo),
+        e assim melhorar o conteúdo e a navegação. Essas ferramentas não têm acesso ao conteúdo do seu orçamento.
+      </p>
+
+      <h2>5. Por quanto tempo guardamos seus dados</h2>
+      <p>
+        Mantemos os dados do seu pedido de orçamento pelo tempo necessário para o atendimento comercial e para fins
+        de histórico e organização interna, podendo ser removidos a qualquer momento mediante solicitação sua.
+      </p>
+
+      <h2>6. Seus direitos como titular dos dados</h2>
+      <p>De acordo com a LGPD, você pode, a qualquer momento, solicitar:</p>
+      <ul>
+        <li>Confirmação de que tratamos seus dados, e acesso a eles;</li>
+        <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+        <li>Exclusão dos seus dados dos nossos sistemas;</li>
+        <li>Informação sobre com quem compartilhamos seus dados (quando aplicável);</li>
+        <li>Revogação do seu consentimento.</li>
+      </ul>
+      <p>
+        Para exercer qualquer um desses direitos, fale com a gente diretamente pelo WhatsApp:{" "}
+        <a href={waLink} target="_blank" rel="noopener">clique aqui para falar com a Gazzotto BBQ</a>.
+      </p>
+
+      <h2>7. Alterações nesta política</h2>
+      <p>
+        Esta política pode ser atualizada sempre que necessário, para refletir melhorias no site ou mudanças na
+        legislação. A data da última atualização está sempre indicada no topo desta página.
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<style is:global>
+.legal { min-height: 100vh; padding: 7rem 1.5rem 5rem; background: var(--bg-dark); color: var(--text); }
+.legal__wrap { max-width: 760px; }
+.legal__back { display: inline-block; margin-bottom: 1.6rem; color: var(--chicken); font: 600 .82rem var(--font-body); text-decoration: none; }
+.legal__back:hover { text-decoration: underline; }
+.legal h1 { font: 400 clamp(1.7rem, 4vw, 2.3rem) var(--font-display); color: var(--cream); margin-bottom: .4rem; }
+.legal__atualizado { font-size: .78rem; color: var(--muted); margin-bottom: 2rem; }
+.legal h2 { font: 700 1.05rem var(--font-body); color: var(--chicken); margin: 2.2rem 0 .8rem; }
+.legal p, .legal li { font-size: .9rem; line-height: 1.7; color: var(--text); }
+.legal p { margin-bottom: 1rem; }
+.legal ul { padding-left: 1.3rem; margin-bottom: 1rem; }
+.legal li { margin-bottom: .4rem; }
+.legal a { color: var(--chicken); }
+</style>

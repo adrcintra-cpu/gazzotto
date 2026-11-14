@@ -178,6 +178,7 @@ import { contact, supabaseConfig } from "../data/media";
       <h3 class="wiz__panel-title">Revise seu pedido</h3>
       <div class="wiz__resumo" data-resumo></div>
       <p class="wiz__aviso">O valor final do seu evento será calculado pela nossa equipe. Após o envio, você recebe um protocolo e pode falar direto com a Gazzotto pelo WhatsApp.</p>
+      <p class="wiz__aviso wiz__aviso--lgpd">Ao confirmar, você concorda com o uso dos seus dados para elaborar o orçamento, conforme nossa <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
       <div class="wiz__nav">
         <button type="button" class="wiz__btn-back" data-back>Voltar</button>
         <button type="button" class="btn btn--red" data-enviar>Confirmar e enviar</button>
@@ -809,6 +810,8 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__resumo-linha strong { color: var(--muted); font-weight: 600; flex: none; }
 .wiz__resumo-linha span { text-align: right; }
 .wiz__aviso { font-size: .78rem; color: var(--muted); margin-top: .5rem; }
+.wiz__aviso--lgpd { font-size: .72rem; }
+.wiz__aviso--lgpd a { color: var(--chicken); }
 
 /* Etapa 5 — confirmação */
 .wiz__confirmacao { text-align: center; padding: 2rem 0; }
