@@ -71,7 +71,8 @@ export const contact = {
 };
 
 /**
- * Supabase — backend do configurador "Monte seu Evento" (src/pages/monte-seu-evento.astro).
+ * Supabase — backend do configurador "Monte seu Evento" (src/components/EventWizard.astro,
+ * incluído na home em src/pages/index.astro, abaixo da seção Cardápios).
  * `publishableKey` é a chave pública (anon/publishable) do projeto: é seguro ela ficar no
  * código do site (fica exposta no navegador de qualquer forma) — o acesso real é controlado
  * pelas políticas de Row Level Security no banco (cliente só consegue criar orçamentos novos,
