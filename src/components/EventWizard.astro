@@ -664,6 +664,23 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__steps li.is-active .wiz__step-label { color: var(--cream); }
 .wiz__steps li.is-done .wiz__step-num { background: var(--chicken); color: var(--barbecue); border-color: var(--chicken); }
 
+/* Mobile: 5 rótulos de texto lado a lado não cabem numa tela estreita e ficam espremidos.
+   Aqui só os números ficam na fileira (mais próximos entre si) e o nome do passo atual
+   vira uma legenda centralizada embaixo do círculo ativo, sem esticar a largura da fileira. */
+@media (max-width: 600px) {
+  .wiz__steps { gap: 0; margin-top: 1.8rem; padding-bottom: 1.6rem; }
+  .wiz__steps li { padding: 0 .55rem; }
+  .wiz__steps li:not(:last-child)::after { width: .9rem; }
+  .wiz__step-num { width: 1.6rem; height: 1.6rem; font-size: .72rem; }
+  .wiz__step-label {
+    display: none;
+  }
+  .wiz__steps li.is-active .wiz__step-label {
+    display: block; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    margin-top: .5rem; white-space: nowrap; font-size: .66rem;
+  }
+}
+
 .wiz__body { margin-top: 3rem; max-width: 760px; }
 .wiz__panel-title { font: 400 clamp(1.3rem, 2.6vw, 1.7rem)/1.2 var(--font-display); margin-bottom: 1.6rem; }
 
