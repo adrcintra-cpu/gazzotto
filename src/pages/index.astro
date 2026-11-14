@@ -197,7 +197,7 @@ const socials = [
         {media.logo ? <img src={cld(media.logo)} alt="Gazzotto BBQ" loading="lazy" /> : <span>GAZZOTTO</span>}
       </a>
       <nav class="social" aria-label="Redes sociais">
-        {socials.map((s) => <a href={s.href} aria-label={s.label} rel="noopener"><Icon name={s.icon} size={20} /></a>)}
+        {socials.map((s) => <a href={s.href} aria-label={s.label} target="_blank" rel="noopener"><Icon name={s.icon} size={20} /></a>)}
       </nav>
     </div>
     <div class="footer__bottom">
