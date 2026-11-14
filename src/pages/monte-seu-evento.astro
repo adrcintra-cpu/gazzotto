@@ -1,0 +1,777 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Icon from "../components/Icon.astro";
+import Logo from "../components/Logo.astro";
+import { contact, media, cld, supabaseConfig } from "../data/media";
+
+const cta = contact.whatsapp
+  ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Olá! Quero um orçamento com a Gazzotto BBQ.")}`
+  : "#contato";
+
+const socials = [
+  { icon: "facebook", label: "Facebook", href: contact.facebook },
+  { icon: "instagram", label: "Instagram", href: contact.instagram },
+];
+---
+<Layout
+  title="Monte seu Evento | Gazzotto BBQ"
+  description="Escolha sua experiência, monte seu cardápio e peça seu orçamento com a Gazzotto BBQ em poucos minutos."
+>
+  <header class="header" id="header">
+    <div class="wrap">
+      <a class="header__logo" href="/" aria-label="Gazzotto BBQ — início"><Logo /></a>
+      <nav class="nav" id="nav" aria-label="Principal">
+        <a href="/">Início</a><a href="/monte-seu-evento" aria-current="page">Monte seu Evento</a><a href="/#eventos">Eventos</a><a href="/#cardapios">Montar Cardápio</a><a href="/#diferenciais">Diferenciais</a><a href="/#contato">Contato</a>
+      </nav>
+      <a class="btn header__cta" href={cta}>Quero um orçamento</a>
+      <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main id="topo">
+    <section class="wiz" aria-labelledby="wiz-title">
+      <div class="wrap wiz__head">
+        <h1 class="h2" id="wiz-title">Monte seu Evento</h1>
+        <p class="wiz__tagline">Seu evento, seu cardápio, uma experiência inesquecível.</p>
+
+        <ol class="wiz__steps" data-steps aria-label="Etapas do pedido de orçamento">
+          <li data-dot="1"><span class="wiz__step-num">1</span><span class="wiz__step-label">Experiência</span></li>
+          <li data-dot="2"><span class="wiz__step-num">2</span><span class="wiz__step-label">Personalize</span></li>
+          <li data-dot="3"><span class="wiz__step-num">3</span><span class="wiz__step-label">Seu evento</span></li>
+          <li data-dot="4"><span class="wiz__step-num">4</span><span class="wiz__step-label">Revisão</span></li>
+          <li data-dot="5"><span class="wiz__step-num">5</span><span class="wiz__step-label">Confirmação</span></li>
+        </ol>
+      </div>
+
+      <div class="wrap wiz__body">
+        <!-- ETAPA 1 — Escolha sua experiência -->
+        <div class="wiz__panel" data-panel="1">
+          <h2 class="wiz__panel-title">Escolha sua experiência</h2>
+          <div class="wiz__exp-cards">
+            <button type="button" class="wiz__exp-card" data-modalidade="pacote">
+              <span class="wiz__exp-icon"><Icon name="trophy" size={30} /></span>
+              <h3>Cardápios Gazzotto</h3>
+              <p>Escolha um cardápio pronto, já pensado pela nossa equipe.</p>
+            </button>
+            <button type="button" class="wiz__exp-card" data-modalidade="monte_cardapio">
+              <span class="wiz__exp-icon"><Icon name="cut" size={30} /></span>
+              <h3>Monte seu Cardápio</h3>
+              <p>Escolha cortes, acompanhamentos e sobremesas do seu jeito.</p>
+            </button>
+            <button type="button" class="wiz__exp-card" data-modalidade="festival_hamburguer">
+              <span class="wiz__exp-icon"><Icon name="flame" size={30} /></span>
+              <h3>Festival de Hambúrguer</h3>
+              <p>Hambúrgueres artesanais na brasa para o seu evento.</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 2 — Personalize seu evento -->
+        <div class="wiz__panel" data-panel="2" hidden>
+          <h2 class="wiz__panel-title" data-step2-title>Personalize seu evento</h2>
+          <div data-step2-content class="wiz__step2-content" aria-live="polite">
+            <p class="wiz__loading">Carregando opções…</p>
+          </div>
+          <div class="wiz__nav">
+            <button type="button" class="wiz__btn-back" data-back>Voltar</button>
+            <button type="button" class="btn btn--red" data-next>Continuar</button>
+          </div>
+        </div>
+
+        <!-- ETAPA 3 — Informações do evento -->
+        <div class="wiz__panel" data-panel="3" hidden>
+          <h2 class="wiz__panel-title">Informações do evento</h2>
+          <form class="wiz__form" data-form-evento novalidate>
+            <fieldset class="wiz__fgroup">
+              <legend>Responsável</legend>
+              <label class="wiz__field">
+                <span>Nome completo *</span>
+                <input type="text" name="nome_responsavel" required autocomplete="name" />
+              </label>
+              <label class="wiz__field">
+                <span>WhatsApp *</span>
+                <input type="tel" name="whatsapp" required placeholder="(19) 99999-9999" autocomplete="tel" />
+              </label>
+              <label class="wiz__field">
+                <span>E-mail</span>
+                <input type="email" name="email" autocomplete="email" />
+              </label>
+            </fieldset>
+
+            <fieldset class="wiz__fgroup">
+              <legend>Evento</legend>
+              <label class="wiz__field">
+                <span>Tipo de evento *</span>
+                <select name="tipo_evento" required>
+                  <option value="" disabled selected>Selecione</option>
+                  <option>Casamento</option>
+                  <option>Aniversário</option>
+                  <option>Confraternização</option>
+                  <option>Evento corporativo</option>
+                  <option>Outro</option>
+                </select>
+              </label>
+              <label class="wiz__field">
+                <span>Data *</span>
+                <input type="date" name="data_evento" required data-data-evento />
+              </label>
+              <label class="wiz__field">
+                <span>Horário de início</span>
+                <input type="time" name="horario_inicio" />
+              </label>
+              <label class="wiz__field">
+                <span>Endereço ou local</span>
+                <input type="text" name="endereco" />
+              </label>
+              <label class="wiz__field">
+                <span>Cidade</span>
+                <input type="text" name="cidade" />
+              </label>
+            </fieldset>
+
+            <fieldset class="wiz__fgroup">
+              <legend>Convidados</legend>
+              <label class="wiz__field">
+                <span>Quantidade de adultos *</span>
+                <input type="number" name="qtd_adultos" min="1" step="1" required />
+              </label>
+              <label class="wiz__field">
+                <span>Quantidade de crianças</span>
+                <input type="number" name="qtd_criancas" min="0" step="1" value="0" data-qtd-criancas />
+              </label>
+              <label class="wiz__field" data-idades-criancas hidden>
+                <span>Idades das crianças</span>
+                <input type="text" name="idades_criancas" placeholder="ex.: 4, 7 e 10 anos" />
+              </label>
+              <label class="wiz__field">
+                <span>Equipe de apoio / fornecedores que precisam de alimentação</span>
+                <input type="number" name="qtd_equipe_apoio" min="0" step="1" value="0" />
+              </label>
+            </fieldset>
+
+            <fieldset class="wiz__fgroup">
+              <legend>Estrutura</legend>
+              <div class="wiz__field wiz__field--full">
+                <span>Onde será preparado o churrasco? *</span>
+                <div class="wiz__radios">
+                  <label><input type="radio" name="estrutura_churrasco" value="parrilla_gazzotto" required /> Parrilla da Gazzotto</label>
+                  <label><input type="radio" name="estrutura_churrasco" value="churrasqueira_local" /> Churrasqueira disponível no local</label>
+                </div>
+              </div>
+              <div class="wiz__field wiz__field--full">
+                <span>Deseja contratar buffet? *</span>
+                <div class="wiz__radios">
+                  <label><input type="radio" name="deseja_buffet" value="sim" required data-buffet-radio /> Sim</label>
+                  <label><input type="radio" name="deseja_buffet" value="nao" data-buffet-radio /> Não</label>
+                </div>
+              </div>
+              <div class="wiz__field wiz__field--full" data-louca-field hidden>
+                <span>Pratos e talheres *</span>
+                <div class="wiz__radios">
+                  <label><input type="radio" name="tipo_louca" value="descartaveis" /> Descartáveis</label>
+                  <label><input type="radio" name="tipo_louca" value="porcelana" /> Louças de porcelana e talheres de inox</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="wiz__fgroup">
+              <legend>Observações</legend>
+              <label class="wiz__field wiz__field--full">
+                <span>Necessidades especiais, restrições alimentares ou outras solicitações</span>
+                <textarea name="observacoes" rows="3"></textarea>
+              </label>
+            </fieldset>
+          </form>
+          <div class="wiz__nav">
+            <button type="button" class="wiz__btn-back" data-back>Voltar</button>
+            <button type="button" class="btn btn--red" data-next>Continuar</button>
+          </div>
+        </div>
+
+        <!-- ETAPA 4 — Revisão -->
+        <div class="wiz__panel" data-panel="4" hidden>
+          <h2 class="wiz__panel-title">Revise seu pedido</h2>
+          <div class="wiz__resumo" data-resumo></div>
+          <p class="wiz__aviso">O valor final do seu evento será calculado pela nossa equipe. Após o envio, você recebe um protocolo e pode falar direto com a Gazzotto pelo WhatsApp.</p>
+          <div class="wiz__nav">
+            <button type="button" class="wiz__btn-back" data-back>Voltar</button>
+            <button type="button" class="btn btn--red" data-enviar>Confirmar e enviar</button>
+          </div>
+          <p class="wiz__erro" data-erro-envio hidden role="alert"></p>
+        </div>
+
+        <!-- ETAPA 5 — Confirmação -->
+        <div class="wiz__panel" data-panel="5" hidden>
+          <div class="wiz__confirmacao" data-confirmacao></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__top">
+      <a class="footer__logo" href="/" aria-label="Gazzotto BBQ — topo">
+        {media.logo ? <img src={cld(media.logo)} alt="Gazzotto BBQ" loading="lazy" /> : <span>GAZZOTTO</span>}
+      </a>
+      <nav class="social" aria-label="Redes sociais">
+        {socials.map((s) => <a href={s.href} aria-label={s.label} rel="noopener"><Icon name={s.icon} size={20} /></a>)}
+      </nav>
+    </div>
+    <div class="footer__bottom">
+      <div class="wrap footer__bottom-inner">
+        <span>© Gazzotto 2026 | Todos os direitos reservados</span>
+        <a class="footer__dev" href="https://oxycom.tech" target="_blank" rel="noopener" aria-label="Desenvolvido por Oxycom">
+          Desenvolvido por
+          <svg class="footer__dev-logo" viewBox="0 0 595.3 165.7" width="62" height="18" aria-hidden="true" focusable="false">
+            <g fill="currentColor">
+              <g>
+                <path d="M217.3,50.9c14.7,0,24.4,7.6,24.4,22.2v17.1c0,14.8-9.8,22.3-24.6,22.3s-24.4-7.6-24.4-22.3v-17.1c0-14.7,9.7-22.2,24.6-22.2ZM217.2,104.8c9.4,0,15.5-4.7,15.5-14v-18.3c0-9.2-6.1-13.8-15.4-13.8s-15.5,4.7-15.5,13.8v18.3c0,9.3,6.2,14,15.4,14Z"/>
+                <path d="M265.7,82l-21.6-29.9h10.7l16.4,22.9,16.5-22.9h10.1l-21.6,29.4,21.6,29.9h-10.7l-16.4-22.9-16.5,22.9h-10.1l21.6-29.4Z"/>
+                <path d="M409,92.8h0c0,12.2-8.7,19.8-23.2,19.8s-23.9-7.9-23.9-21.6v-17.8c0-13.8,9-21.6,24-21.6s23,7.4,23,19.6h0c0,.1-5.1.1-5.1.1v-.3c0-9.1-6.6-14.9-17.9-14.9s-18.9,6.2-18.9,16.9v18.4c0,10.7,6.9,17,18.7,17s18-5.9,18-15v-.3h5.1Z"/>
+                <path d="M442.5,51.5c14.1,0,23.4,7.2,23.4,21.3v18.4c0,14.2-9.3,21.4-23.5,21.4s-23.5-7.2-23.5-21.4v-18.4c0-14.1,9.3-21.3,23.6-21.3ZM442.4,108.1c11.2,0,18.4-5.6,18.4-16.8v-18.9c0-11.1-7.2-16.6-18.3-16.6s-18.5,5.6-18.5,16.6v18.9c0,11.2,7.3,16.8,18.4,16.8Z"/>
+                <path d="M497.3,51.5c8.5,0,14.8,3.3,17.7,10.2,2.9-7,9.3-10.2,17.8-10.2,12.2,0,20.2,6.6,20.2,20.5v39.5h-5.1v-39.7c0-10.8-5.9-15.8-15.1-15.8s-15.2,5-15.2,15.8v39.7h-5.1v-39.7c0-10.8-5.9-15.8-15.1-15.8s-15.2,5-15.2,15.8v39.7h-5.1v-39.5c0-13.8,8-20.5,20.4-20.5Z"/>
+                <path d="M341.8,52.1v36.5c0,9.2-6.5,13.8-15.8,13.8s-15-4.1-15-13.3v-37.1h-9.1v36.5c0,14.7,8.6,21.6,22.2,21.6s13.7-2.3,17.7-6.9v10.6c0,9.1-5.8,14.1-15.7,14.1h-15.8v7.8h15.8c14.8.3,24.4-7.7,24.8-22.5v-61.3h-9.1Z"/>
+              </g>
+              <g>
+                <path d="M368.7,123.6h6.2v1.1h-2.6v4.4c0,1.7.4,2.2,2.6,2v1.1c-3.4.6-4-.7-4-3.1v-4.3h-2.3v-1.1Z"/>
+                <path d="M391.4,123.4c2.1,0,3.5,1.1,3.5,3.2v1.6h-5.8v.9c0,1.3.8,2,2.3,2s2.1-.7,2.2-1.7h1.3c-.1,1.8-1.4,2.8-3.5,2.8s-3.6-1.1-3.6-3.2v-2.5c0-2.1,1.4-3.2,3.5-3.2ZM393.6,127.2v-.7c0-1.3-.9-2-2.2-2s-2.2.7-2.2,2v.7h4.5Z"/>
+                <path d="M415.5,129.3h0c0,2-1.3,3.1-3.5,3.1s-3.6-1.2-3.6-3.2v-2.4c0-2.1,1.4-3.2,3.6-3.2s3.5,1.1,3.5,3h0s-1.3,0-1.3,0h0c0-1.2-.8-1.9-2.2-1.9s-2.3.7-2.3,2v2.6c0,1.3.9,2,2.3,2s2.2-.7,2.2-1.9h0c0,0,1.3,0,1.3,0Z"/>
+                <path d="M432.6,123.4c2.1,0,3.5,1.1,3.5,3.2v5.5h-1.3v-5.6c0-1.3-.9-2-2.2-2s-2.2.7-2.2,2v5.6h-1.3v-5.5c0-2.1,1.4-3.2,3.6-3.2Z"/>
+                <path d="M453.2,123.4c2.1,0,3.5,1.1,3.5,3.2v2.5c0,2.1-1.4,3.2-3.5,3.2s-3.5-1.1-3.5-3.2v-2.5c0-2.1,1.4-3.2,3.5-3.2ZM453.2,131.2c1.4,0,2.2-.7,2.2-2v-2.6c0-1.3-.9-2-2.2-2s-2.2.7-2.2,2v2.6c0,1.3.9,2,2.2,2Z"/>
+                <path d="M468.9,119.7h3.6v9.4c0,1.7.4,2.2,2.6,2v1.1c-3.4.6-4-.7-4-3.1v-8.2h-2.3v-1.1Z"/>
+                <path d="M491.1,123.4c2.1,0,3.5,1.1,3.5,3.2v2.5c0,2.1-1.4,3.2-3.5,3.2s-3.5-1.1-3.5-3.2v-2.5c0-2.1,1.4-3.2,3.5-3.2ZM491.1,131.2c1.4,0,2.2-.7,2.2-2v-2.6c0-1.3-.9-2-2.2-2s-2.2.7-2.2,2v2.6c0,1.3.9,2,2.2,2Z"/>
+                <path d="M510.7,129.5c-.6.6-.3,1.4.5,1.4h1.7c1.6,0,2.5.8,2.5,2.2s-1.6,2.7-4,2.7-3.9-1.1-3.5-2.9h1.2c-.2,1.1.6,1.8,2.3,1.8s2.6-.5,2.6-1.4-.5-1.1-1.4-1.1h-1.6c-2.1,0-2.4-1.8-1.5-2.8-1.2-.4-1.9-1.4-1.9-2.8s1.4-3,3.5-3,1,0,1.4.2h2.7v1h-1c.3.6.5,1.2.5,1.9,0,2-1.4,3.1-3.5,3.1s-.5,0-.7,0ZM511.3,128.4c1.4,0,2.2-.7,2.2-1.9s-.8-1.9-2.2-1.9-2.2.7-2.2,1.9.8,1.9,2.2,1.9Z"/>
+                <path d="M527.8,123.6h3.6v5.6c0,1.7.4,2.2,2.6,2v1.1c-3.4.6-4-.7-4-3.1v-4.3h-2.3v-1.1ZM530.1,120h1.3v1.9h-1.3v-1.9Z"/>
+                <path d="M549.5,127.2c1.1,0,2,.3,2.6.9v-1.6c0-1.2-.8-1.9-2-1.9s-2,.5-2,1.7h-1.3c0-1.9,1.2-2.7,3.3-2.7s3.3,1,3.3,3v3c0,1.3.3,1.9,1.5,1.6v1.1c-1.5.5-2.3,0-2.6-1-.5.8-1.5,1.2-2.8,1.2-1.9,0-3.2-.8-3.2-2.6s1.2-2.6,3.2-2.6ZM549.8,131.2c1.3,0,2.3-.5,2.3-1.5s-.9-1.5-2.3-1.5-2.2.4-2.2,1.5.8,1.5,2.2,1.5Z"/>
+              </g>
+              <g>
+                <path d="M109.5,82.9c0,5.7,2.2,11.5,6.5,15.8l46.6,46.6,10.8-10.8-46.6-46.6c-2.8-2.8-2.8-7.3,0-10l46.6-46.6-10.8-10.8-46.6,46.6c-4.4,4.4-6.5,10.1-6.5,15.8Z"/>
+                <path d="M104.3,82.9c0,5.7-2.2,11.5-6.5,15.8l-46.6,46.6-10.8-10.8,46.6-46.6c2.8-2.8,2.8-7.3,0-10L40.3,31.2l10.8-10.8,46.6,46.6c4.4,4.4,6.5,10.1,6.5,15.8Z"/>
+              </g>
+            </g>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script is:inline>
+    // Menu: fica sólido ao rolar; no celular abre/fecha o painel. (mesmo comportamento do index.astro)
+    (function () {
+      var h = document.getElementById("header"), t = document.getElementById("nav-toggle");
+      function onScroll() { h.classList.toggle("is-solid", scrollY > 40); }
+      addEventListener("scroll", onScroll, { passive: true }); onScroll();
+      function setOpen(o) { h.classList.toggle("is-open", o); t.setAttribute("aria-expanded", String(o)); t.setAttribute("aria-label", o ? "Fechar menu" : "Abrir menu"); }
+      t.addEventListener("click", function () { setOpen(!h.classList.contains("is-open")); });
+      document.getElementById("nav").addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+      addEventListener("keydown", function (e) { if (e.key === "Escape") setOpen(false); });
+    })();
+  </script>
+
+  <script type="module" is:inline define:vars={{ SUPABASE_URL: supabaseConfig.url, SUPABASE_KEY: supabaseConfig.publishableKey, WHATSAPP: contact.whatsapp }}>
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // IMPORTANTE: nunca encadear `.select()` depois de `.insert()` nas tabelas `orcamentos` /
+    // `orcamento_itens` — elas não têm política de SELECT para o cliente anônimo (de propósito,
+    // ninguém além da equipe deve ler orçamentos de terceiros), e o RETURNING do insert também
+    // é filtrado por política de SELECT. Sem `.select()`, o insert funciona normalmente; com
+    // `.select()`, o Postgres recusa a linha inteira com "new row violates row-level security
+    // policy" mesmo quando os dados são válidos. Testado e confirmado no banco em 2026-11-14.
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const CATEGORIA_LABELS = {
+      cortes_bovinos: "Cortes bovinos",
+      cortes_suinos: "Cortes suínos",
+      cortes_aves: "Cortes de aves",
+      cortes_cordeiro: "Cortes de cordeiro",
+      acompanhamentos_especiais: "Acompanhamentos especiais",
+      sobremesas: "Sobremesas",
+      adicionais_brasa: "Adicionais especiais — Feitos na Brasa (opcional)",
+      festival_burgers: "Escolha os hambúrgueres",
+      festival_acompanhamentos: "Acompanhamentos",
+      festival_sobremesas: "Sobremesa",
+    };
+    // Categorias de escolha única (radio) — as demais são seleção múltipla (chips).
+    const RADIO_CATEGORIAS = new Set(["festival_sobremesas"]);
+    const MODALIDADE_LABELS = {
+      pacote: "Cardápios Gazzotto",
+      monte_cardapio: "Monte seu Cardápio",
+      festival_hamburguer: "Festival de Hambúrguer",
+    };
+    const ESTRUTURA_LABELS = { parrilla_gazzotto: "Parrilla da Gazzotto", churrasqueira_local: "Churrasqueira disponível no local" };
+    const LOUCA_LABELS = { descartaveis: "Descartáveis", porcelana: "Louças de porcelana e talheres de inox" };
+
+    const state = {
+      modalidade: null,
+      pacoteId: null,
+      selections: {
+        monte_cardapio: new Set(),
+        adicionais: new Set(),
+        festival_burgers: new Set(),
+        festival_acompanhamentos: new Set(),
+        festival_sobremesas: new Set(),
+      },
+      evento: {},
+    };
+
+    let catalogo = null; // preenchido por carregarCatalogo()
+    let itensPorId = new Map();
+    let isSubmitting = false;
+
+    async function carregarCatalogo() {
+      if (catalogo) return catalogo;
+      const [{ data: categorias, error: e1 }, { data: itens, error: e2 }, { data: pacotes, error: e3 }] = await Promise.all([
+        supabase.from("categorias").select("id, grupo, slug, nome, ordem").order("ordem"),
+        supabase.from("itens").select("id, categoria_id, nome, descricao, ordem").order("ordem"),
+        supabase.from("pacotes").select("id, nome, descricao").order("ordem"),
+      ]);
+      if (e1 || e2 || e3) throw e1 || e2 || e3;
+      itensPorId = new Map(itens.map((i) => [i.id, i]));
+      catalogo = { categorias, itens, pacotes };
+      return catalogo;
+    }
+
+    function itensDaCategoria(categoriaId) {
+      return catalogo.itens.filter((i) => i.categoria_id === categoriaId);
+    }
+
+    // ---------- Navegação entre etapas ----------
+    const panels = Array.from(document.querySelectorAll("[data-panel]"));
+    const dots = Array.from(document.querySelectorAll("[data-dot]"));
+    let currentStep = 1;
+
+    function goToStep(n) {
+      currentStep = n;
+      panels.forEach((p) => { p.hidden = Number(p.dataset.panel) !== n; });
+      dots.forEach((d) => {
+        const i = Number(d.dataset.dot);
+        d.classList.toggle("is-active", i === n);
+        d.classList.toggle("is-done", i < n);
+      });
+      document.querySelector(".wiz__head").scrollIntoView({ behavior: "smooth", block: "start" });
+      if (n === 2) renderStep2();
+      if (n === 4) renderResumo();
+    }
+
+    // ---------- ETAPA 1 ----------
+    document.querySelectorAll("[data-modalidade]").forEach((card) => {
+      card.addEventListener("click", function () {
+        state.modalidade = card.dataset.modalidade;
+        document.querySelectorAll("[data-modalidade]").forEach((c) => c.classList.toggle("is-selected", c === card));
+        goToStep(2);
+      });
+    });
+
+    // ---------- ETAPA 2 ----------
+    function toggleSelecao(set, itemId, singleChoice) {
+      if (singleChoice) {
+        if (set.has(itemId)) set.clear();
+        else { set.clear(); set.add(itemId); }
+      } else {
+        if (set.has(itemId)) set.delete(itemId);
+        else set.add(itemId);
+      }
+    }
+
+    function renderChipsCategoria(categoria, set) {
+      const itens = itensDaCategoria(categoria.id);
+      if (!itens.length) return "";
+      const singleChoice = RADIO_CATEGORIAS.has(categoria.slug);
+      const wrap = document.createElement("div");
+      wrap.className = "wiz__cat";
+      wrap.innerHTML =
+        '<h3 class="wiz__cat-title">' + (CATEGORIA_LABELS[categoria.slug] || categoria.nome) + "</h3>" +
+        '<div class="wiz__chips" data-chips="' + categoria.id + '"></div>';
+      const chipsEl = wrap.querySelector("[data-chips]");
+      itens.forEach((item) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "wiz__chip";
+        chip.dataset.itemId = item.id;
+        chip.setAttribute("aria-pressed", String(set.has(item.id)));
+        chip.classList.toggle("is-selected", set.has(item.id));
+        chip.innerHTML = '<span>' + item.nome + '</span>' + (item.descricao ? '<small>' + item.descricao + '</small>' : "");
+        chip.addEventListener("click", function () {
+          toggleSelecao(set, item.id, singleChoice);
+          chip.classList.toggle("is-selected", set.has(item.id));
+          chip.setAttribute("aria-pressed", String(set.has(item.id)));
+          if (singleChoice) {
+            chipsEl.querySelectorAll(".wiz__chip").forEach((c) => {
+              if (c !== chip) { c.classList.remove("is-selected"); c.setAttribute("aria-pressed", "false"); }
+            });
+          }
+        });
+        chipsEl.appendChild(chip);
+      });
+      return wrap;
+    }
+
+    async function renderStep2() {
+      const titleEl = document.querySelector("[data-step2-title]");
+      const content = document.querySelector("[data-step2-content]");
+      content.innerHTML = '<p class="wiz__loading">Carregando opções…</p>';
+      try {
+        await carregarCatalogo();
+      } catch (err) {
+        content.innerHTML = '<p class="wiz__erro" role="alert">Não foi possível carregar as opções agora. Verifique sua conexão e tente novamente.</p>';
+        return;
+      }
+      content.innerHTML = "";
+
+      if (state.modalidade === "pacote") {
+        titleEl.textContent = "Escolha seu cardápio";
+        const grid = document.createElement("div");
+        grid.className = "wiz__pacotes";
+        catalogo.pacotes.forEach((p) => {
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = "wiz__pacote-card";
+          card.classList.toggle("is-selected", state.pacoteId === p.id);
+          card.innerHTML = "<h3>" + p.nome + "</h3><p>" + (p.descricao || "") + "</p>";
+          card.addEventListener("click", function () {
+            state.pacoteId = p.id;
+            grid.querySelectorAll(".wiz__pacote-card").forEach((c) => c.classList.toggle("is-selected", c === card));
+          });
+          grid.appendChild(card);
+        });
+        content.appendChild(grid);
+        const nota = document.createElement("p");
+        nota.className = "wiz__nota";
+        nota.textContent = "Nossa equipe vai apresentar os itens inclusos nesse cardápio durante o atendimento.";
+        content.appendChild(nota);
+      } else if (state.modalidade === "monte_cardapio") {
+        titleEl.textContent = "Monte seu cardápio";
+        const categorias = catalogo.categorias.filter((c) => c.grupo === "monte_cardapio");
+        categorias.forEach((c) => {
+          const el = renderChipsCategoria(c, state.selections.monte_cardapio);
+          if (el) content.appendChild(el);
+        });
+        const adicionais = catalogo.categorias.find((c) => c.slug === "adicionais_brasa");
+        if (adicionais) {
+          const el = renderChipsCategoria(adicionais, state.selections.adicionais);
+          if (el) content.appendChild(el);
+        }
+      } else if (state.modalidade === "festival_hamburguer") {
+        titleEl.textContent = "Festival de Hambúrguer";
+        const slugs = ["festival_burgers", "festival_acompanhamentos", "festival_sobremesas"];
+        slugs.forEach((slug) => {
+          const c = catalogo.categorias.find((cat) => cat.slug === slug);
+          if (!c) return;
+          const setKey = slug;
+          const el = renderChipsCategoria(c, state.selections[setKey]);
+          if (el) content.appendChild(el);
+        });
+        const nota = document.createElement("p");
+        nota.className = "wiz__nota";
+        nota.textContent = "Quer alterar algum ingrediente? Conte pra gente no campo de observações, na próxima etapa — sujeito à disponibilidade.";
+        content.appendChild(nota);
+      }
+    }
+
+    function validarEtapa2() {
+      if (state.modalidade === "pacote") return !!state.pacoteId;
+      if (state.modalidade === "monte_cardapio") return state.selections.monte_cardapio.size > 0;
+      if (state.modalidade === "festival_hamburguer") return state.selections.festival_burgers.size > 0;
+      return false;
+    }
+
+    // ---------- ETAPA 3 ----------
+    const formEvento = document.querySelector("[data-form-evento]");
+    const inputData = formEvento.querySelector("[data-data-evento]");
+    if (inputData) inputData.min = new Date().toISOString().slice(0, 10);
+
+    formEvento.querySelector("[data-qtd-criancas]").addEventListener("input", function (e) {
+      const campo = formEvento.querySelector("[data-idades-criancas]");
+      campo.hidden = Number(e.target.value || 0) <= 0;
+      campo.querySelector("input").required = !campo.hidden;
+    });
+
+    formEvento.querySelectorAll("[data-buffet-radio]").forEach((r) => {
+      r.addEventListener("change", function () {
+        const campo = formEvento.querySelector("[data-louca-field]");
+        const quer = formEvento.querySelector("[data-buffet-radio]:checked")?.value === "sim";
+        campo.hidden = !quer;
+        campo.querySelectorAll("input").forEach((i) => { i.required = quer; });
+      });
+    });
+
+    function coletarEtapa3() {
+      const d = new FormData(formEvento);
+      state.evento = {
+        nome_responsavel: (d.get("nome_responsavel") || "").toString().trim(),
+        whatsapp: (d.get("whatsapp") || "").toString().trim(),
+        email: (d.get("email") || "").toString().trim(),
+        tipo_evento: (d.get("tipo_evento") || "").toString(),
+        data_evento: (d.get("data_evento") || "").toString(),
+        horario_inicio: (d.get("horario_inicio") || "").toString(),
+        endereco: (d.get("endereco") || "").toString().trim(),
+        cidade: (d.get("cidade") || "").toString().trim(),
+        qtd_adultos: Number(d.get("qtd_adultos") || 0),
+        qtd_criancas: Number(d.get("qtd_criancas") || 0),
+        idades_criancas: (d.get("idades_criancas") || "").toString().trim(),
+        qtd_equipe_apoio: Number(d.get("qtd_equipe_apoio") || 0),
+        estrutura_churrasco: (d.get("estrutura_churrasco") || "").toString(),
+        deseja_buffet: d.get("deseja_buffet") === "sim",
+        tipo_louca: (d.get("tipo_louca") || "").toString(),
+        observacoes: (d.get("observacoes") || "").toString().trim(),
+      };
+    }
+
+    // ---------- ETAPA 4 — Resumo ----------
+    function nomesSelecionados(set) {
+      return Array.from(set).map((id) => itensPorId.get(id)?.nome).filter(Boolean);
+    }
+
+    function linhaResumo(label, valor) {
+      if (!valor) return "";
+      return '<div class="wiz__resumo-linha"><strong>' + label + "</strong><span>" + valor + "</span></div>";
+    }
+
+    function renderResumo() {
+      const el = document.querySelector("[data-resumo]");
+      let html = "";
+
+      html += '<section class="wiz__resumo-bloco"><h3>Experiência <button type="button" class="wiz__editar" data-editar="1">Editar</button></h3>';
+      html += linhaResumo("Modalidade", MODALIDADE_LABELS[state.modalidade] || "");
+      if (state.modalidade === "pacote") {
+        const p = catalogo.pacotes.find((x) => x.id === state.pacoteId);
+        html += linhaResumo("Cardápio", p ? p.nome : "");
+      }
+      html += "</section>";
+
+      html += '<section class="wiz__resumo-bloco"><h3>Itens escolhidos <button type="button" class="wiz__editar" data-editar="2">Editar</button></h3>';
+      if (state.modalidade === "monte_cardapio") {
+        html += linhaResumo("Cardápio", nomesSelecionados(state.selections.monte_cardapio).join(", "));
+        html += linhaResumo("Adicionais na brasa", nomesSelecionados(state.selections.adicionais).join(", "));
+      } else if (state.modalidade === "festival_hamburguer") {
+        html += linhaResumo("Hambúrgueres", nomesSelecionados(state.selections.festival_burgers).join(", "));
+        html += linhaResumo("Acompanhamentos", nomesSelecionados(state.selections.festival_acompanhamentos).join(", "));
+        html += linhaResumo("Sobremesa", nomesSelecionados(state.selections.festival_sobremesas).join(", "));
+      } else {
+        html += linhaResumo("Itens", "A equipe Gazzotto vai apresentar os itens inclusos nesse cardápio.");
+      }
+      html += "</section>";
+
+      const ev = state.evento;
+      html += '<section class="wiz__resumo-bloco"><h3>Dados do evento <button type="button" class="wiz__editar" data-editar="3">Editar</button></h3>';
+      html += linhaResumo("Responsável", ev.nome_responsavel);
+      html += linhaResumo("WhatsApp", ev.whatsapp);
+      html += linhaResumo("E-mail", ev.email);
+      html += linhaResumo("Tipo de evento", ev.tipo_evento);
+      html += linhaResumo("Data", ev.data_evento ? new Date(ev.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "");
+      html += linhaResumo("Horário", ev.horario_inicio);
+      html += linhaResumo("Local", [ev.endereco, ev.cidade].filter(Boolean).join(", "));
+      html += linhaResumo("Adultos", String(ev.qtd_adultos || ""));
+      html += linhaResumo("Crianças", ev.qtd_criancas ? ev.qtd_criancas + " (" + (ev.idades_criancas || "idades não informadas") + ")" : "");
+      html += linhaResumo("Equipe de apoio", ev.qtd_equipe_apoio ? String(ev.qtd_equipe_apoio) : "");
+      html += linhaResumo("Preparo do churrasco", ESTRUTURA_LABELS[ev.estrutura_churrasco] || "");
+      html += linhaResumo("Buffet", ev.deseja_buffet ? "Sim — " + (LOUCA_LABELS[ev.tipo_louca] || "") : "Não");
+      html += linhaResumo("Observações", ev.observacoes);
+      html += "</section>";
+
+      el.innerHTML = html;
+      el.querySelectorAll("[data-editar]").forEach((b) => b.addEventListener("click", function () { goToStep(Number(b.dataset.editar)); }));
+    }
+
+    // ---------- Protocolo + envio ----------
+    function gerarProtocolo() {
+      const data = new Date();
+      const yyyymmdd = data.toISOString().slice(0, 10).replace(/-/g, "");
+      const sufixo = Math.random().toString(36).slice(2, 7).toUpperCase();
+      return "GZT-" + yyyymmdd + "-" + sufixo;
+    }
+
+    function montarMensagemWhatsapp(protocolo) {
+      const ev = state.evento;
+      const linhas = [
+        "Olá! Acabei de enviar um pedido de orçamento pelo site da Gazzotto BBQ.",
+        "Protocolo: " + protocolo,
+        "Experiência: " + (MODALIDADE_LABELS[state.modalidade] || ""),
+        "Tipo de evento: " + ev.tipo_evento,
+        "Data: " + (ev.data_evento ? new Date(ev.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : ""),
+        "Convidados: " + (ev.qtd_adultos || 0) + " adultos" + (ev.qtd_criancas ? " e " + ev.qtd_criancas + " crianças" : ""),
+      ];
+      return linhas.join("\n");
+    }
+
+    async function enviarOrcamento() {
+      if (isSubmitting) return;
+      isSubmitting = true;
+      const btn = document.querySelector("[data-enviar]");
+      const erroEl = document.querySelector("[data-erro-envio]");
+      erroEl.hidden = true;
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+      const textoOriginal = btn.textContent;
+      btn.textContent = "Enviando…";
+
+      const protocolo = gerarProtocolo();
+      const orcamentoId = crypto.randomUUID();
+      const ev = state.evento;
+
+      try {
+        // 1) Orçamento — sem .select() de propósito (ver nota no topo do script).
+        const { error: errOrc } = await supabase.from("orcamentos").insert({
+          id: orcamentoId,
+          protocolo,
+          modalidade: state.modalidade,
+          pacote_id: state.modalidade === "pacote" ? state.pacoteId : null,
+          nome_responsavel: ev.nome_responsavel,
+          whatsapp: ev.whatsapp,
+          email: ev.email || null,
+          tipo_evento: ev.tipo_evento,
+          data_evento: ev.data_evento,
+          horario_inicio: ev.horario_inicio || null,
+          endereco: ev.endereco || null,
+          cidade: ev.cidade || null,
+          qtd_adultos: ev.qtd_adultos || 0,
+          qtd_criancas: ev.qtd_criancas || 0,
+          idades_criancas: ev.idades_criancas || null,
+          qtd_equipe_apoio: ev.qtd_equipe_apoio || 0,
+          estrutura_churrasco: ev.estrutura_churrasco || null,
+          deseja_buffet: !!ev.deseja_buffet,
+          tipo_louca: ev.deseja_buffet ? ev.tipo_louca || null : null,
+          observacoes: ev.observacoes || null,
+        });
+        if (errOrc) throw errOrc;
+
+        // 2) Itens do orçamento (quando houver)
+        const linhasItens = [];
+        const add = (set, contexto) => Array.from(set).forEach((itemId) => linhasItens.push({ orcamento_id: orcamentoId, item_id: itemId, contexto, quantidade: 1 }));
+        if (state.modalidade === "monte_cardapio") {
+          add(state.selections.monte_cardapio, "monte_cardapio");
+          add(state.selections.adicionais, "adicionais");
+        } else if (state.modalidade === "festival_hamburguer") {
+          add(state.selections.festival_burgers, "festival");
+          add(state.selections.festival_acompanhamentos, "festival");
+          add(state.selections.festival_sobremesas, "festival");
+        }
+        if (linhasItens.length) {
+          const { error: errItens } = await supabase.from("orcamento_itens").insert(linhasItens);
+          if (errItens) throw errItens;
+        }
+
+        renderConfirmacao(protocolo);
+        goToStep(5);
+      } catch (err) {
+        console.error("Erro ao enviar orçamento:", err);
+        erroEl.textContent = "Não conseguimos enviar seu pedido agora. Verifique sua internet e tente novamente — nada foi perdido.";
+        erroEl.hidden = false;
+      } finally {
+        isSubmitting = false;
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+        btn.textContent = textoOriginal;
+      }
+    }
+
+    function renderConfirmacao(protocolo) {
+      const el = document.querySelector("[data-confirmacao]");
+      const waLink = WHATSAPP
+        ? "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(montarMensagemWhatsapp(protocolo))
+        : null;
+      el.innerHTML =
+        '<div class="wiz__ok-icon" aria-hidden="true">✓</div>' +
+        "<h2>Pedido enviado com sucesso!</h2>" +
+        '<p class="wiz__protocolo">Protocolo: <strong>' + protocolo + "</strong></p>" +
+        "<p>Nossa equipe vai analisar seu pedido e preparar uma proposta. Guarde o protocolo acima.</p>" +
+        (waLink ? '<a class="btn btn--red" href="' + waLink + '" target="_blank" rel="noopener">Falar agora no WhatsApp</a>' : "");
+    }
+
+    // ---------- Botões Voltar / Continuar ----------
+    document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", function () { goToStep(currentStep - 1); }));
+    document.querySelectorAll("[data-next]").forEach((b) => b.addEventListener("click", function () {
+      if (currentStep === 2) {
+        if (!validarEtapa2()) { alert("Escolha ao menos uma opção para continuar."); return; }
+        goToStep(3);
+      } else if (currentStep === 3) {
+        if (!formEvento.reportValidity()) return;
+        coletarEtapa3();
+        goToStep(4);
+      }
+    }));
+    document.querySelector("[data-enviar]").addEventListener("click", enviarOrcamento);
+  </script>
+</Layout>
+
+<style is:global>
+.wiz { padding: 8rem 0 5rem; min-height: 100vh; }
+.wiz__head { text-align: center; }
+.wiz__tagline { margin-top: .6rem; color: var(--muted); font-size: .95rem; }
+
+.wiz__steps { display: flex; justify-content: center; gap: 0; margin-top: 2.2rem; flex-wrap: wrap; }
+.wiz__steps li { display: flex; align-items: center; gap: .5rem; padding: 0 1.1rem; position: relative; }
+.wiz__steps li:not(:last-child)::after { content: ""; position: absolute; right: -.1rem; top: 50%; transform: translateY(-50%); width: 1.4rem; height: 1px; background: var(--line); }
+.wiz__step-num { display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--card); border: 1px solid var(--line); font: 700 .8rem var(--font-body); color: var(--muted); flex: none; }
+.wiz__step-label { font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.wiz__steps li.is-active .wiz__step-num { background: var(--burger); color: #fff; border-color: var(--burger); }
+.wiz__steps li.is-active .wiz__step-label { color: var(--cream); }
+.wiz__steps li.is-done .wiz__step-num { background: var(--chicken); color: var(--barbecue); border-color: var(--chicken); }
+
+.wiz__body { margin-top: 3rem; max-width: 760px; }
+.wiz__panel-title { font: 400 clamp(1.3rem, 2.6vw, 1.7rem)/1.2 var(--font-display); margin-bottom: 1.6rem; }
+
+/* Etapa 1 */
+.wiz__exp-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
+.wiz__exp-card { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.4rem; cursor: pointer; color: var(--text); transition: border-color .25s, transform .2s, background .25s; }
+.wiz__exp-card:hover, .wiz__exp-card:focus-visible { border-color: var(--burger); transform: translateY(-3px); }
+.wiz__exp-card.is-selected { border-color: var(--burger); background: var(--card-2); }
+.wiz__exp-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 8px; background: var(--icon-bg); color: var(--logo); margin-bottom: .8rem; }
+.wiz__exp-card h3 { font: 700 1rem var(--font-body); margin-bottom: .3rem; }
+.wiz__exp-card p { font-size: .78rem; color: var(--muted); }
+@media (max-width: 760px) { .wiz__exp-cards { grid-template-columns: 1fr; } }
+
+/* Etapa 2 */
+.wiz__cat { margin-bottom: 1.8rem; }
+.wiz__cat-title { font: 700 .85rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--chicken); margin-bottom: .7rem; }
+.wiz__chips { display: flex; flex-wrap: wrap; gap: .6rem; }
+.wiz__chip { display: flex; flex-direction: column; text-align: left; gap: .15rem; padding: .55rem .9rem; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; font: 600 .82rem var(--font-body); transition: border-color .2s, background .2s; }
+.wiz__chip small { font-weight: 400; font-size: .68rem; color: var(--muted); max-width: 22ch; }
+.wiz__chip:hover { border-color: var(--chicken); }
+.wiz__chip.is-selected { background: var(--burger); border-color: var(--burger); color: #fff; }
+.wiz__chip.is-selected small { color: rgb(255 255 255 / .8); }
+.wiz__nota { margin-top: 1rem; font-size: .78rem; color: var(--muted); }
+.wiz__loading { color: var(--muted); font-size: .85rem; }
+
+.wiz__pacotes { display: grid; gap: .9rem; }
+.wiz__pacote-card { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.3rem; cursor: pointer; color: var(--text); }
+.wiz__pacote-card h3 { font: 700 1rem var(--font-body); margin-bottom: .3rem; }
+.wiz__pacote-card p { font-size: .8rem; color: var(--muted); }
+.wiz__pacote-card.is-selected { border-color: var(--burger); background: var(--card-2); }
+
+/* Etapa 3 — formulário */
+.wiz__fgroup { border: 0; padding: 0; margin: 0 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+.wiz__fgroup legend { grid-column: 1 / -1; font: 700 .85rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--chicken); margin-bottom: .4rem; padding: 0; }
+.wiz__field { display: flex; flex-direction: column; gap: .35rem; font-size: .78rem; color: var(--muted); }
+.wiz__field--full { grid-column: 1 / -1; }
+.wiz__field input, .wiz__field select, .wiz__field textarea {
+  padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
+  background: transparent; color: var(--cream); font: inherit; font-size: .85rem;
+}
+.wiz__field select { color-scheme: dark; }
+.wiz__radios { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: .85rem; color: var(--cream); }
+.wiz__radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+@media (max-width: 640px) { .wiz__fgroup { grid-template-columns: 1fr; } }
+
+/* Navegação entre etapas */
+.wiz__nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.6rem; gap: 1rem; }
+.wiz__btn-back { background: transparent; border: 1px solid var(--line); color: var(--cream); padding: .55rem 1.1rem; border-radius: 6px; cursor: pointer; font: 600 .8rem var(--font-body); }
+.wiz__btn-back:hover { border-color: var(--chicken); }
+.wiz__erro { margin-top: 1rem; color: var(--burger); font-size: .82rem; }
+
+/* Etapa 4 — resumo */
+.wiz__resumo-bloco { margin-bottom: 1.6rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--line); }
+.wiz__resumo-bloco h3 { display: flex; justify-content: space-between; align-items: center; font: 700 .85rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--chicken); margin-bottom: .6rem; }
+.wiz__editar { background: transparent; border: 0; color: var(--cream); text-decoration: underline; cursor: pointer; font-size: .72rem; text-transform: none; letter-spacing: 0; }
+.wiz__resumo-linha { display: flex; justify-content: space-between; gap: 1rem; font-size: .82rem; padding: .3rem 0; }
+.wiz__resumo-linha strong { color: var(--muted); font-weight: 600; flex: none; }
+.wiz__resumo-linha span { text-align: right; }
+.wiz__aviso { font-size: .78rem; color: var(--muted); margin-top: .5rem; }
+
+/* Etapa 5 — confirmação */
+.wiz__confirmacao { text-align: center; padding: 2rem 0; }
+.wiz__ok-icon { display: grid; place-items: center; width: 4rem; height: 4rem; margin: 0 auto 1.2rem; border-radius: 50%; background: var(--burger); color: #fff; font-size: 1.8rem; }
+.wiz__confirmacao h2 { font: 400 1.6rem var(--font-display); margin-bottom: .6rem; }
+.wiz__protocolo { font-size: 1rem; margin: .8rem 0; }
+.wiz__confirmacao .btn { margin-top: 1.4rem; }
+</style>

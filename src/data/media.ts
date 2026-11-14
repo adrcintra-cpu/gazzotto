@@ -69,3 +69,15 @@ export const contact = {
   instagram: "https://www.instagram.com/gazzottobbq/",
   facebook: "#",
 };
+
+/**
+ * Supabase — backend do configurador "Monte seu Evento" (src/pages/monte-seu-evento.astro).
+ * `publishableKey` é a chave pública (anon/publishable) do projeto: é seguro ela ficar no
+ * código do site (fica exposta no navegador de qualquer forma) — o acesso real é controlado
+ * pelas políticas de Row Level Security no banco (cliente só consegue criar orçamentos novos,
+ * nunca ler os de outra pessoa). Nunca coloque aqui a service_role key.
+ */
+export const supabaseConfig = {
+  url: "https://honfbgzkgvjnexhrlqao.supabase.co",
+  publishableKey: "sb_publishable_MMOWijMByT-7VojeK8Qbug_DBztEr4C",
+};
