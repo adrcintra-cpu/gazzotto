@@ -69,7 +69,7 @@ export const media = {
  * funcionar normalmente sem nenhum script de rastreio carregado.
  */
 export const gtmConfig = {
-  containerId: "", // ex.: "GTM-ABC1234"
+  containerId: "GTM-WZT38GRB",
 };
 
 export const contact = {
