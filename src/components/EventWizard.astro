@@ -104,7 +104,8 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Endereço ou local</span>
-            <input type="text" name="endereco" autocomplete="street-address" />
+            <input type="text" name="endereco" autocomplete="off" list="wiz-enderecos" />
+            <datalist id="wiz-enderecos"></datalist>
           </label>
           <label class="wiz__field">
             <span>Cidade</span>
@@ -429,6 +430,42 @@ import { contact, supabaseConfig } from "../data/media";
           // IBGE fora do ar ou sem internet: o campo continua funcionando normalmente, só sem sugestão.
         });
     }, { once: true });
+  })();
+
+  // Sugestão de endereço ao digitar (rua/local), usando o Nominatim do OpenStreetMap — gratuito,
+  // sem chave/cadastro. Respeita a política de uso do serviço: aguarda o usuário parar de digitar
+  // (debounce) e cancela buscas antigas, mantendo no máximo 1 requisição por vez.
+  (function () {
+    const inputEndereco = formEvento.querySelector('[name="endereco"]');
+    const datalistEndereco = document.getElementById("wiz-enderecos");
+    if (!inputEndereco || !datalistEndereco) return;
+    let timer = 0, controller = null;
+    inputEndereco.addEventListener("input", function () {
+      const termo = inputEndereco.value.trim();
+      clearTimeout(timer);
+      if (termo.length < 4) { datalistEndereco.innerHTML = ""; return; }
+      timer = setTimeout(function () {
+        if (controller) controller.abort();
+        controller = new AbortController();
+        const url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&countrycodes=br&limit=6&q=" + encodeURIComponent(termo);
+        fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } })
+          .then((r) => r.json())
+          .then((lista) => {
+            datalistEndereco.innerHTML = "";
+            const frag = document.createDocumentFragment();
+            (lista || []).forEach((item) => {
+              const opt = document.createElement("option");
+              opt.value = item.display_name;
+              frag.appendChild(opt);
+            });
+            datalistEndereco.appendChild(frag);
+          })
+          .catch(() => {
+            // Nominatim fora do ar, sem internet ou busca cancelada: o campo continua
+            // funcionando normalmente como texto livre, só sem sugestão.
+          });
+      }, 450);
+    });
   })();
 
   formEvento.querySelector("[data-qtd-criancas]").addEventListener("input", function (e) {
