@@ -300,12 +300,15 @@ import { contact, supabaseConfig } from "../data/media";
     }
   }
 
-  function renderChipsCategoria(categoria, set) {
+  function renderChipsCategoria(categoria, set, indice) {
     const itens = itensDaCategoria(categoria.id);
     if (!itens.length) return "";
     const singleChoice = RADIO_CATEGORIAS.has(categoria.slug);
     const wrap = document.createElement("div");
     wrap.className = "wiz__cat";
+    // Cada categoria entra com uma animação suave e um pequeno atraso em cascata,
+    // em vez de aparecer tudo de uma vez.
+    wrap.style.animationDelay = (Math.min(indice || 0, 6) * 0.1) + "s";
     wrap.innerHTML =
       '<h4 class="wiz__cat-title">' + (CATEGORIA_LABELS[categoria.slug] || categoria.nome) + "</h4>" +
       '<div class="wiz__chips" data-chips="' + categoria.id + '"></div>';
@@ -369,23 +372,23 @@ import { contact, supabaseConfig } from "../data/media";
     } else if (state.modalidade === "monte_cardapio") {
       titleEl.textContent = "Monte seu cardápio";
       const categorias = catalogo.categorias.filter((c) => c.grupo === "monte_cardapio");
-      categorias.forEach((c) => {
-        const el = renderChipsCategoria(c, state.selections.monte_cardapio);
+      categorias.forEach((c, i) => {
+        const el = renderChipsCategoria(c, state.selections.monte_cardapio, i);
         if (el) content.appendChild(el);
       });
       const adicionais = catalogo.categorias.find((c) => c.slug === "adicionais_brasa");
       if (adicionais) {
-        const el = renderChipsCategoria(adicionais, state.selections.adicionais);
+        const el = renderChipsCategoria(adicionais, state.selections.adicionais, categorias.length);
         if (el) content.appendChild(el);
       }
     } else if (state.modalidade === "festival_hamburguer") {
       titleEl.textContent = "Festival de Hambúrguer";
       const slugs = ["festival_burgers", "festival_acompanhamentos", "festival_sobremesas"];
-      slugs.forEach((slug) => {
+      slugs.forEach((slug, i) => {
         const c = catalogo.categorias.find((cat) => cat.slug === slug);
         if (!c) return;
         const setKey = slug;
-        const el = renderChipsCategoria(c, state.selections[setKey]);
+        const el = renderChipsCategoria(c, state.selections[setKey], i);
         if (el) content.appendChild(el);
       });
       const nota = document.createElement("p");
@@ -761,7 +764,16 @@ import { contact, supabaseConfig } from "../data/media";
 @media (max-width: 560px) { .wiz__exp-cards { grid-template-columns: 1fr; } }
 
 /* Etapa 2 */
-.wiz__cat { margin-bottom: 1.8rem; }
+/* Cada categoria do "Monte seu cardápio" abre com um fade + leve deslizamento, de forma lenta
+   e em cascata (ver animationDelay no JS), em vez de aparecer tudo de uma vez. */
+@keyframes wiz-cat-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.wiz__cat { margin-bottom: 1.8rem; animation: wiz-cat-in .8s cubic-bezier(.16,.84,.44,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .wiz__cat { animation: none; }
+}
 .wiz__cat-title { font: 700 .85rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--chicken); margin-bottom: .7rem; }
 .wiz__chips { display: flex; flex-wrap: wrap; gap: .6rem; }
 .wiz__chip { display: flex; flex-direction: column; text-align: left; gap: .15rem; padding: .55rem .9rem; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; font: 600 .82rem var(--font-body); transition: border-color .2s, background .2s; }
