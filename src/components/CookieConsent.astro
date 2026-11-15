@@ -1,0 +1,87 @@
+---
+// Janela de aceite de cookies, fixa no rodapé. Só aparece se o visitante ainda não respondeu
+// (guardamos a escolha no localStorage) e some com uma transição suave ao aceitar/recusar.
+// Não bloqueia carregamento de nada (GTM continua como está) — é só o aviso/consentimento.
+---
+<div class="cookie-consent" data-cookie-consent hidden>
+  <p>
+    Usamos cookies para melhorar sua experiência e analisar o uso do site. Ao continuar
+    navegando, você concorda com nossa <a href="/privacidade">Política de Privacidade</a>.
+  </p>
+  <div class="cookie-consent__acoes">
+    <button type="button" class="cookie-consent__recusar" data-cookie-recusar>Recusar</button>
+    <button type="button" class="btn btn--red cookie-consent__aceitar" data-cookie-aceitar>Aceitar</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var CHAVE = "gazzotto_cookie_consent";
+  var el = document.querySelector("[data-cookie-consent]");
+  if (!el) return;
+
+  var escolhaSalva;
+  try { escolhaSalva = localStorage.getItem(CHAVE); } catch (e) { escolhaSalva = null; }
+  if (escolhaSalva) return;
+
+  // Mostra com um pequeno atraso, já depois do primeiro paint, para não brigar com o
+  // carregamento inicial da página.
+  setTimeout(function () {
+    el.hidden = false;
+    requestAnimationFrame(function () { el.classList.add("is-visivel"); });
+  }, 600);
+
+  function responder(valor) {
+    try { localStorage.setItem(CHAVE, valor); } catch (e) {}
+    el.classList.remove("is-visivel");
+    setTimeout(function () { el.hidden = true; }, 400);
+  }
+
+  var btnAceitar = el.querySelector("[data-cookie-aceitar]");
+  var btnRecusar = el.querySelector("[data-cookie-recusar]");
+  if (btnAceitar) btnAceitar.addEventListener("click", function () { responder("aceito"); });
+  if (btnRecusar) btnRecusar.addEventListener("click", function () { responder("recusado"); });
+})();
+</script>
+
+<style is:global>
+.cookie-consent {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  max-width: 640px;
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.3rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-dark) 94%, white 6%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / .4);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.cookie-consent.is-visivel { opacity: 1; transform: translateY(0); }
+.cookie-consent p { flex: 1 1 260px; font-size: .82rem; line-height: 1.5; color: var(--muted); margin: 0; }
+.cookie-consent p a { color: var(--chicken); text-decoration: underline; }
+.cookie-consent__acoes { display: flex; gap: .6rem; flex: none; }
+.cookie-consent__recusar {
+  background: transparent; border: 1px solid var(--line); border-radius: 8px;
+  padding: .55rem 1.1rem; font: 600 .78rem var(--font-body); color: var(--muted); cursor: pointer;
+}
+.cookie-consent__recusar:hover { border-color: var(--chicken); color: var(--cream); }
+.cookie-consent__aceitar { padding: .55rem 1.3rem; font-size: .8rem; }
+@media (max-width: 560px) {
+  .cookie-consent { left: .7rem; right: .7rem; bottom: .7rem; padding: 1rem; }
+  .cookie-consent__acoes { width: 100%; }
+  .cookie-consent__recusar, .cookie-consent__aceitar { flex: 1; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cookie-consent { transition: none; }
+}
+</style>
