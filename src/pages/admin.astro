@@ -458,6 +458,10 @@ import { supabaseConfig } from "../data/media";
 
 .admin__login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
 .admin__login-card { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 1rem; background: color-mix(in srgb, var(--bg-dark) 92%, white 8%); border: 1px solid var(--line); border-radius: 14px; padding: 2rem 1.75rem; }
+/* O atributo "hidden" sozinho perde pro "display:flex" das duas regras acima (mesma
+   especificidade, e a regra do autor sempre vence a do navegador) — sem isto, o formulário
+   de "Esqueci minha senha" ficava lado a lado com o de login em vez de substituí-lo. */
+.admin__login[hidden], .admin__login-card[hidden] { display: none; }
 .admin__login-card h1 { font: 400 1.3rem var(--font-display); color: var(--cream); text-align: center; }
 .admin__login-card .admin__hint { text-align: center; margin-top: -.5rem; }
 .admin__field { display: flex; flex-direction: column; gap: .4rem; font-size: .8rem; color: var(--muted); }
