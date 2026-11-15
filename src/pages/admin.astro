@@ -19,6 +19,19 @@ import { supabaseConfig } from "../data/media";
         </label>
         <p class="admin__erro" data-login-erro hidden></p>
         <button type="submit" class="btn btn--red">Entrar</button>
+        <button type="button" class="admin__link-btn" data-esqueci-abrir>Esqueceu a senha?</button>
+      </form>
+
+      <form class="admin__login-card admin__esqueci" data-esqueci-form hidden>
+        <h1>Esqueci minha senha</h1>
+        <p class="admin__hint">Informe seu e-mail de acesso. Vamos te mandar um link para criar uma senha nova.</p>
+        <label class="admin__field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="username" required />
+        </label>
+        <p class="admin__erro" data-esqueci-msg hidden></p>
+        <button type="submit" class="btn btn--red">Enviar link de redefinição</button>
+        <button type="button" class="admin__link-btn" data-esqueci-cancelar>Voltar para o login</button>
       </form>
     </section>
 
@@ -140,6 +153,8 @@ import { supabaseConfig } from "../data/media";
   const loginErro = root.querySelector("[data-login-erro]");
   const senhaForm = root.querySelector("[data-senha-form]");
   const senhaErro = root.querySelector("[data-senha-erro]");
+  const esqueciForm = root.querySelector("[data-esqueci-form]");
+  const esqueciMsg = root.querySelector("[data-esqueci-msg]");
 
   // Link de convite/recuperação da Supabase chega com "type=invite" (ou "type=recovery") no
   // hash da URL — nesse caso, antes de mostrar o painel, pedimos pra pessoa criar a própria senha.
@@ -157,6 +172,8 @@ import { supabaseConfig } from "../data/media";
     panelView.hidden = true;
     senhaView.hidden = true;
     loginView.hidden = false;
+    esqueciForm.hidden = true;
+    loginForm.hidden = false;
     carregado = false;
   }
 
@@ -232,6 +249,36 @@ import { supabaseConfig } from "../data/media";
     // Mostra o painel na hora, sem depender só do onAuthStateChange (no Safari esse aviso
     // às vezes demora/não dispara a tempo, e a tela ficava voltando pro login em branco).
     mostrarPainel(data.user?.email);
+  });
+
+  // ---------- Esqueci minha senha ----------
+  root.querySelector("[data-esqueci-abrir]").addEventListener("click", () => {
+    loginForm.hidden = true;
+    esqueciMsg.hidden = true;
+    esqueciForm.reset();
+    esqueciForm.hidden = false;
+  });
+  root.querySelector("[data-esqueci-cancelar]").addEventListener("click", () => {
+    esqueciForm.hidden = true;
+    esqueciMsg.hidden = true;
+    esqueciForm.reset();
+    loginForm.hidden = false;
+  });
+  esqueciForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    esqueciMsg.hidden = true;
+    const email = new FormData(esqueciForm).get("email");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/",
+    });
+    if (error) {
+      esqueciMsg.textContent = "Não foi possível enviar o link: " + error.message;
+      esqueciMsg.style.color = "var(--burger)";
+    } else {
+      esqueciMsg.textContent = "Se esse e-mail tiver cadastro, um link de redefinição foi enviado agora.";
+      esqueciMsg.style.color = "var(--chicken)";
+    }
+    esqueciMsg.hidden = false;
   });
 
   root.querySelector("[data-logout]").addEventListener("click", async () => {
@@ -416,6 +463,8 @@ import { supabaseConfig } from "../data/media";
 .admin__field { display: flex; flex-direction: column; gap: .4rem; font-size: .8rem; color: var(--muted); }
 .admin__field input { padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; font-size: .9rem; }
 .admin__erro { font-size: .8rem; color: var(--burger); margin: -.3rem 0 0; }
+.admin__link-btn { background: transparent; border: 0; padding: 0; margin-top: -.3rem; color: var(--chicken); font: 600 .78rem var(--font-body); text-decoration: underline; cursor: pointer; }
+.admin__link-btn:hover { opacity: .85; }
 
 .admin__bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap; }
 .admin__bar h1 { font: 400 1.5rem var(--font-display); color: var(--cream); }
