@@ -75,10 +75,6 @@ import { contact, supabaseConfig } from "../data/media";
             <span>WhatsApp *</span>
             <input type="tel" name="whatsapp" required placeholder="(19) 99999-9999" autocomplete="tel" />
           </label>
-          <label class="wiz__field">
-            <span>E-mail</span>
-            <input type="email" name="email" autocomplete="email" />
-          </label>
         </fieldset>
 
         <fieldset class="wiz__fgroup">
@@ -104,13 +100,11 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Endereço ou local</span>
-            <input type="text" name="endereco" autocomplete="off" list="wiz-enderecos" />
-            <datalist id="wiz-enderecos"></datalist>
+            <input type="text" name="endereco" autocomplete="off" />
           </label>
           <label class="wiz__field">
             <span>Cidade *</span>
-            <input type="text" name="cidade" required autocomplete="address-level2" list="wiz-cidades" />
-            <datalist id="wiz-cidades"></datalist>
+            <input type="text" name="cidade" required autocomplete="off" />
           </label>
         </fieldset>
 
@@ -121,16 +115,20 @@ import { contact, supabaseConfig } from "../data/media";
             <input type="number" name="qtd_adultos" min="1" step="1" required inputmode="numeric" />
           </label>
           <label class="wiz__field">
-            <span>Quantidade de crianças</span>
-            <input type="number" name="qtd_criancas" min="0" step="1" value="0" data-qtd-criancas inputmode="numeric" />
+            <span>Quantidade de crianças (até 12 anos)</span>
+            <input type="number" name="qtd_criancas" min="0" step="1" value="0" inputmode="numeric" />
           </label>
-          <label class="wiz__field" data-idades-criancas hidden>
-            <span>Idades das crianças</span>
-            <input type="text" name="idades_criancas" placeholder="ex.: 4, 7 e 10 anos" />
-          </label>
-          <label class="wiz__field">
-            <span>Equipe de apoio / fornecedores que precisam de alimentação</span>
-            <input type="number" name="qtd_equipe_apoio" min="0" step="1" value="0" inputmode="numeric" />
+          <div class="wiz__field wiz__field--full">
+            <span>Equipe de apoio / fornecedores que precisam de alimentação?</span>
+            <label class="wiz__switch">
+              <input type="checkbox" data-equipe-switch />
+              <span class="wiz__switch-track"><span class="wiz__switch-thumb"></span></span>
+              <span class="wiz__switch-label">Sim, incluir alimentação para a equipe de apoio</span>
+            </label>
+          </div>
+          <label class="wiz__field" data-equipe-qtd-field hidden>
+            <span>Quantidade de pessoas</span>
+            <input type="number" name="qtd_equipe_apoio" min="1" step="1" value="0" inputmode="numeric" />
           </label>
         </fieldset>
 
@@ -144,11 +142,16 @@ import { contact, supabaseConfig } from "../data/media";
             </div>
           </div>
           <div class="wiz__field wiz__field--full">
-            <span>Deseja contratar buffet? *</span>
-            <div class="wiz__radios">
-              <label><input type="radio" name="deseja_buffet" value="sim" required data-buffet-radio /> Sim</label>
-              <label><input type="radio" name="deseja_buffet" value="nao" data-buffet-radio /> Não</label>
-            </div>
+            <span>Deseja contratar buffet?</span>
+            <label class="wiz__switch">
+              <input type="checkbox" data-buffet-switch />
+              <span class="wiz__switch-track"><span class="wiz__switch-thumb"></span></span>
+              <span class="wiz__switch-label">Sim, quero contratar o buffet</span>
+            </label>
+          </div>
+          <div class="wiz__field wiz__field--full" data-buffet-itens-field hidden>
+            <span>Escolha os itens do buffet</span>
+            <div class="wiz__chips" data-buffet-chips></div>
           </div>
           <div class="wiz__field wiz__field--full" data-louca-field hidden>
             <span>Pratos e talheres *</span>
@@ -237,6 +240,7 @@ import { contact, supabaseConfig } from "../data/media";
       festival_burgers: new Set(),
       festival_acompanhamentos: new Set(),
       festival_sobremesas: new Set(),
+      buffet: new Set(),
     },
     evento: {},
   };
@@ -429,81 +433,63 @@ import { contact, supabaseConfig } from "../data/media";
   const inputData = formEvento.querySelector("[data-data-evento]");
   if (inputData) inputData.min = new Date().toISOString().slice(0, 10);
 
-  // Sugestão de cidade ao digitar, usando a base pública e gratuita do IBGE (sem chave/API key).
-  // Carrega só quando o campo recebe foco pela primeira vez, pra não pesar o carregamento da página.
+  // ---------- Equipe de apoio: switch liga/desliga + quantidade ----------
   (function () {
-    const inputCidade = formEvento.querySelector('[name="cidade"]');
-    const datalist = document.getElementById("wiz-cidades");
-    if (!inputCidade || !datalist) return;
-    inputCidade.addEventListener("focus", function carregarCidades() {
-      inputCidade.removeEventListener("focus", carregarCidades);
-      fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
-        .then((r) => r.json())
-        .then((lista) => {
-          const frag = document.createDocumentFragment();
-          lista.forEach((m) => {
-            const uf = m?.microrregiao?.mesorregiao?.UF?.sigla;
-            const opt = document.createElement("option");
-            opt.value = uf ? `${m.nome} - ${uf}` : m.nome;
-            frag.appendChild(opt);
-          });
-          datalist.appendChild(frag);
-        })
-        .catch(() => {
-          // IBGE fora do ar ou sem internet: o campo continua funcionando normalmente, só sem sugestão.
-        });
-    }, { once: true });
-  })();
-
-  // Sugestão de endereço ao digitar (rua/local), usando o Nominatim do OpenStreetMap — gratuito,
-  // sem chave/cadastro. Respeita a política de uso do serviço: aguarda o usuário parar de digitar
-  // (debounce) e cancela buscas antigas, mantendo no máximo 1 requisição por vez.
-  (function () {
-    const inputEndereco = formEvento.querySelector('[name="endereco"]');
-    const datalistEndereco = document.getElementById("wiz-enderecos");
-    if (!inputEndereco || !datalistEndereco) return;
-    let timer = 0, controller = null;
-    inputEndereco.addEventListener("input", function () {
-      const termo = inputEndereco.value.trim();
-      clearTimeout(timer);
-      if (termo.length < 4) { datalistEndereco.innerHTML = ""; return; }
-      timer = setTimeout(function () {
-        if (controller) controller.abort();
-        controller = new AbortController();
-        const url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&countrycodes=br&limit=6&q=" + encodeURIComponent(termo);
-        fetch(url, { signal: controller.signal, headers: { Accept: "application/json" } })
-          .then((r) => r.json())
-          .then((lista) => {
-            datalistEndereco.innerHTML = "";
-            const frag = document.createDocumentFragment();
-            (lista || []).forEach((item) => {
-              const opt = document.createElement("option");
-              opt.value = item.display_name;
-              frag.appendChild(opt);
-            });
-            datalistEndereco.appendChild(frag);
-          })
-          .catch(() => {
-            // Nominatim fora do ar, sem internet ou busca cancelada: o campo continua
-            // funcionando normalmente como texto livre, só sem sugestão.
-          });
-      }, 450);
+    const equipeSwitch = formEvento.querySelector("[data-equipe-switch]");
+    const equipeQtdField = formEvento.querySelector("[data-equipe-qtd-field]");
+    if (!equipeSwitch || !equipeQtdField) return;
+    const inputQtd = equipeQtdField.querySelector("input");
+    equipeSwitch.addEventListener("change", function () {
+      const quer = equipeSwitch.checked;
+      equipeQtdField.hidden = !quer;
+      if (!quer) inputQtd.value = "0";
+      else if (Number(inputQtd.value || 0) <= 0) inputQtd.value = "1";
     });
   })();
 
-  formEvento.querySelector("[data-qtd-criancas]").addEventListener("input", function (e) {
-    const campo = formEvento.querySelector("[data-idades-criancas]");
-    campo.hidden = Number(e.target.value || 0) <= 0;
-    campo.querySelector("input").required = !campo.hidden;
-  });
+  // ---------- Buffet: switch liga/desliga + itens pra escolher ----------
+  const BUFFET_ITEM_IDS = [
+    "3a9d8535-f716-40f6-8f9e-244340f9f0cc", // Arroz
+    "4a32f61a-aba8-4165-b386-0666160170fa", // Feijão
+    "110c8a9d-8f98-43d1-8f9b-a62e0e880125", // Mix de folhas
+    "6d99f8ed-b98f-4ca7-9f1d-b4f6f40663ba", // Farofa
+    "be805482-12f0-4bcf-a5fc-7ce0038aa5ae", // Vinagrete
+    "345da700-e06a-4cf7-949e-e7b869c0ed92", // Maionese
+    "276f0c5e-baa2-4817-9533-5505cbd952bb", // Mini pão francês
+  ];
+  const buffetSwitch = formEvento.querySelector("[data-buffet-switch]");
+  const buffetItensField = formEvento.querySelector("[data-buffet-itens-field]");
+  const buffetChipsEl = formEvento.querySelector("[data-buffet-chips]");
+  const campoLouca = formEvento.querySelector("[data-louca-field]");
 
-  formEvento.querySelectorAll("[data-buffet-radio]").forEach((r) => {
-    r.addEventListener("change", function () {
-      const campo = formEvento.querySelector("[data-louca-field]");
-      const quer = formEvento.querySelector("[data-buffet-radio]:checked")?.value === "sim";
-      campo.hidden = !quer;
-      campo.querySelectorAll("input").forEach((i) => { i.required = quer; });
+  async function renderBuffetChips() {
+    if (buffetChipsEl.childElementCount) return; // já renderizado
+    try { await carregarCatalogo(); } catch (e) { return; }
+    BUFFET_ITEM_IDS.forEach((id) => {
+      const item = itensPorId.get(id);
+      if (!item) return;
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "wiz__chip";
+      chip.dataset.itemId = item.id;
+      chip.setAttribute("aria-pressed", String(state.selections.buffet.has(item.id)));
+      chip.classList.toggle("is-selected", state.selections.buffet.has(item.id));
+      chip.innerHTML = "<span>" + item.nome + "</span>";
+      chip.addEventListener("click", function () {
+        toggleSelecao(state.selections.buffet, item.id, false);
+        chip.classList.toggle("is-selected", state.selections.buffet.has(item.id));
+        chip.setAttribute("aria-pressed", String(state.selections.buffet.has(item.id)));
+      });
+      buffetChipsEl.appendChild(chip);
     });
+  }
+
+  buffetSwitch.addEventListener("change", function () {
+    const quer = buffetSwitch.checked;
+    campoLouca.hidden = !quer;
+    campoLouca.querySelectorAll("input").forEach((i) => { i.required = quer; });
+    buffetItensField.hidden = !quer;
+    if (quer) renderBuffetChips();
   });
 
   function coletarEtapa3() {
@@ -511,7 +497,6 @@ import { contact, supabaseConfig } from "../data/media";
     state.evento = {
       nome_responsavel: (d.get("nome_responsavel") || "").toString().trim(),
       whatsapp: (d.get("whatsapp") || "").toString().trim(),
-      email: (d.get("email") || "").toString().trim(),
       tipo_evento: (d.get("tipo_evento") || "").toString(),
       data_evento: (d.get("data_evento") || "").toString(),
       horario_inicio: (d.get("horario_inicio") || "").toString(),
@@ -519,10 +504,9 @@ import { contact, supabaseConfig } from "../data/media";
       cidade: (d.get("cidade") || "").toString().trim(),
       qtd_adultos: Number(d.get("qtd_adultos") || 0),
       qtd_criancas: Number(d.get("qtd_criancas") || 0),
-      idades_criancas: (d.get("idades_criancas") || "").toString().trim(),
       qtd_equipe_apoio: Number(d.get("qtd_equipe_apoio") || 0),
       estrutura_churrasco: (d.get("estrutura_churrasco") || "").toString(),
-      deseja_buffet: d.get("deseja_buffet") === "sim",
+      deseja_buffet: buffetSwitch.checked,
       tipo_louca: (d.get("tipo_louca") || "").toString(),
       observacoes: (d.get("observacoes") || "").toString().trim(),
     };
@@ -568,16 +552,17 @@ import { contact, supabaseConfig } from "../data/media";
     html += '<section class="wiz__resumo-bloco"><h4>Dados do evento <button type="button" class="wiz__editar" data-editar="3">Editar</button></h4>';
     html += linhaResumo("Responsável", ev.nome_responsavel);
     html += linhaResumo("WhatsApp", ev.whatsapp);
-    html += linhaResumo("E-mail", ev.email);
     html += linhaResumo("Tipo de evento", ev.tipo_evento);
     html += linhaResumo("Data", ev.data_evento ? new Date(ev.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "");
     html += linhaResumo("Horário", ev.horario_inicio);
     html += linhaResumo("Local", [ev.endereco, ev.cidade].filter(Boolean).join(", "));
     html += linhaResumo("Adultos", String(ev.qtd_adultos || ""));
-    html += linhaResumo("Crianças", ev.qtd_criancas ? ev.qtd_criancas + " (" + (ev.idades_criancas || "idades não informadas") + ")" : "");
+    html += linhaResumo("Crianças (até 12 anos)", ev.qtd_criancas ? String(ev.qtd_criancas) : "");
     html += linhaResumo("Equipe de apoio", ev.qtd_equipe_apoio ? String(ev.qtd_equipe_apoio) : "");
     html += linhaResumo("Preparo do churrasco", ESTRUTURA_LABELS[ev.estrutura_churrasco] || "");
-    html += linhaResumo("Buffet", ev.deseja_buffet ? "Sim — " + (LOUCA_LABELS[ev.tipo_louca] || "") : "Não");
+    html += linhaResumo("Buffet", ev.deseja_buffet
+      ? "Sim — " + (LOUCA_LABELS[ev.tipo_louca] || "") + (state.selections.buffet.size ? " — " + nomesSelecionados(state.selections.buffet).join(", ") : "")
+      : "Não");
     html += linhaResumo("Observações", ev.observacoes);
     html += "</section>";
 
@@ -630,7 +615,7 @@ import { contact, supabaseConfig } from "../data/media";
         pacote_id: state.modalidade === "pacote" ? state.pacoteId : null,
         nome_responsavel: ev.nome_responsavel,
         whatsapp: ev.whatsapp,
-        email: ev.email || null,
+        email: null,
         tipo_evento: ev.tipo_evento,
         data_evento: ev.data_evento,
         horario_inicio: ev.horario_inicio || null,
@@ -638,7 +623,7 @@ import { contact, supabaseConfig } from "../data/media";
         cidade: ev.cidade || null,
         qtd_adultos: ev.qtd_adultos || 0,
         qtd_criancas: ev.qtd_criancas || 0,
-        idades_criancas: ev.idades_criancas || null,
+        idades_criancas: null,
         qtd_equipe_apoio: ev.qtd_equipe_apoio || 0,
         estrutura_churrasco: ev.estrutura_churrasco || null,
         deseja_buffet: !!ev.deseja_buffet,
@@ -660,6 +645,7 @@ import { contact, supabaseConfig } from "../data/media";
         add(state.selections.festival_acompanhamentos, "festival");
         add(state.selections.festival_sobremesas, "festival");
       }
+      if (ev.deseja_buffet) add(state.selections.buffet, "buffet");
       if (linhasItens.length) {
         const { error: errItens } = await supabase.from("orcamento_itens").insert(linhasItens);
         if (errItens) throw errItens;
@@ -831,7 +817,7 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__field--full { grid-column: 1 / -1; }
 /* .wiz__field define display:flex, o que sobrepõe o "display:none" padrão do atributo
    HTML "hidden" (mesma especificidade, e CSS de autor sempre vence o estilo do navegador).
-   Sem isto, campos condicionais como "Idades das crianças" e "Louças" ficavam sempre visíveis. */
+   Sem isto, campos condicionais como "Quantidade de pessoas" (equipe) e "Louças" ficavam sempre visíveis. */
 .wiz__field[hidden] { display: none; }
 .wiz__field input, .wiz__field select, .wiz__field textarea {
   padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
@@ -840,6 +826,24 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__field select { color-scheme: dark; }
 .wiz__radios { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: .85rem; color: var(--cream); }
 .wiz__radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+
+/* Switch (toggle) usado em "Deseja contratar buffet?" e "Equipe de apoio" */
+.wiz__switch { display: inline-flex; align-items: center; gap: .7rem; cursor: pointer; margin-top: .2rem; }
+.wiz__switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.wiz__switch-track {
+  position: relative; flex: none; width: 44px; height: 26px; border-radius: 999px;
+  background: color-mix(in srgb, var(--fish) 35%, transparent);
+  border: 1px solid var(--line);
+  transition: background .2s, border-color .2s;
+}
+.wiz__switch-thumb {
+  position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--cream); transition: transform .2s;
+}
+.wiz__switch input:checked + .wiz__switch-track { background: var(--burger); border-color: var(--burger); }
+.wiz__switch input:checked + .wiz__switch-track .wiz__switch-thumb { transform: translateX(18px); }
+.wiz__switch input:focus-visible + .wiz__switch-track { outline: 2px solid var(--chicken); outline-offset: 2px; }
+.wiz__switch-label { font-size: .85rem; color: var(--cream); font-weight: 600; }
 @media (max-width: 640px) { .wiz__fgroup { grid-template-columns: 1fr; } }
 
 /* Navegação entre etapas */
