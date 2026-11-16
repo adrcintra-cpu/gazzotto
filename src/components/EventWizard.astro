@@ -247,15 +247,24 @@ import { contact, supabaseConfig } from "../data/media";
 
   async function carregarCatalogo() {
     if (catalogo) return catalogo;
-    const [{ data: categorias, error: e1 }, { data: itens, error: e2 }, { data: pacotes, error: e3 }] = await Promise.all([
+    const [{ data: categorias, error: e1 }, { data: itens, error: e2 }, { data: pacotes, error: e3 }, { data: regras, error: e4 }] = await Promise.all([
       supabase.from("categorias").select("id, grupo, slug, nome, ordem").order("ordem"),
       supabase.from("itens").select("id, categoria_id, nome, descricao, ordem").order("ordem"),
       supabase.from("pacotes").select("id, nome, descricao").order("ordem"),
+      supabase.from("pacote_regras").select("id, pacote_id, ordem, pacote_regra_itens(item_id)").order("ordem"),
     ]);
-    if (e1 || e2 || e3) throw e1 || e2 || e3;
+    if (e1 || e2 || e3 || e4) throw e1 || e2 || e3 || e4;
     itensPorId = new Map(itens.map((i) => [i.id, i]));
-    catalogo = { categorias, itens, pacotes };
+    catalogo = { categorias, itens, pacotes, regras };
     return catalogo;
+  }
+
+  // Itens inclusos num pacote, na ordem das regras, já com o nome de cada item resolvido.
+  function itensDoPacote(pacoteId) {
+    return (catalogo.regras || [])
+      .filter((r) => r.pacote_id === pacoteId)
+      .flatMap((r) => (r.pacote_regra_itens || []).map((ri) => itensPorId.get(ri.item_id)))
+      .filter(Boolean);
   }
 
   function itensDaCategoria(categoriaId) {
@@ -353,11 +362,16 @@ import { contact, supabaseConfig } from "../data/media";
       const grid = document.createElement("div");
       grid.className = "wiz__pacotes";
       catalogo.pacotes.forEach((p) => {
+        const itensIncluidos = itensDoPacote(p.id);
         const card = document.createElement("button");
         card.type = "button";
         card.className = "wiz__pacote-card";
         card.classList.toggle("is-selected", state.pacoteId === p.id);
-        card.innerHTML = "<h4>" + p.nome + "</h4><p>" + (p.descricao || "") + "</p>";
+        card.innerHTML =
+          "<h4>" + p.nome + "</h4><p>" + (p.descricao || "") + "</p>" +
+          (itensIncluidos.length
+            ? '<ul class="wiz__pacote-itens">' + itensIncluidos.map((i) => "<li>" + i.nome + "</li>").join("") + "</ul>"
+            : "");
         card.addEventListener("click", function () {
           state.pacoteId = p.id;
           grid.querySelectorAll(".wiz__pacote-card").forEach((c) => c.classList.toggle("is-selected", c === card));
@@ -367,7 +381,7 @@ import { contact, supabaseConfig } from "../data/media";
       content.appendChild(grid);
       const nota = document.createElement("p");
       nota.className = "wiz__nota";
-      nota.textContent = "Nossa equipe vai apresentar os itens inclusos nesse cardápio durante o atendimento.";
+      nota.textContent = "Quer incluir algum item que não está na lista? Conte pra gente no campo de observações, na próxima etapa — sujeito à disponibilidade.";
       content.appendChild(nota);
     } else if (state.modalidade === "monte_cardapio") {
       titleEl.textContent = "Monte seu cardápio";
@@ -789,6 +803,18 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__pacote-card h4 { font: 700 1rem var(--font-body); margin-bottom: .3rem; }
 .wiz__pacote-card p { font-size: .8rem; color: var(--muted); }
 .wiz__pacote-card.is-selected { border-color: var(--burger); background: var(--card-2); }
+.wiz__pacote-itens {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .3rem .9rem;
+  margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--line);
+  list-style: none;
+}
+.wiz__pacote-itens li {
+  position: relative; padding-left: 1.1rem; font-size: .78rem; color: var(--text);
+}
+.wiz__pacote-itens li::before {
+  content: "✓"; position: absolute; left: 0; color: var(--chicken); font-size: .72rem;
+}
+@media (max-width: 560px) { .wiz__pacote-itens { grid-template-columns: 1fr 1fr; } }
 
 /* Etapa 3 — formulário */
 .wiz__fgroup { border: 0; padding: 0; margin: 0 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
