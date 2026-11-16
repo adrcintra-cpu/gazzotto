@@ -104,7 +104,8 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Cidade *</span>
-            <input type="text" name="cidade" required autocomplete="new-password" data-lpignore="true" />
+            <input type="text" name="cidade" required autocomplete="new-password" data-lpignore="true" list="wiz-cidades" />
+            <datalist id="wiz-cidades"></datalist>
           </label>
         </fieldset>
 
@@ -432,6 +433,34 @@ import { contact, supabaseConfig } from "../data/media";
   const formEvento = wizRoot.querySelector("[data-form-evento]");
   const inputData = formEvento.querySelector("[data-data-evento]");
   if (inputData) inputData.min = new Date().toISOString().slice(0, 10);
+
+  // Sugestão de cidade ao digitar, usando a base pública e gratuita do IBGE (sem chave/API key).
+  // Carrega só quando o campo recebe foco pela primeira vez, pra não pesar o carregamento da página.
+  // O autocomplete="new-password" no input evita o autofill de endereço do próprio navegador
+  // (ícone de "preencher endereço salvo"), que conflitava com esta sugestão própria.
+  (function () {
+    const inputCidade = formEvento.querySelector('[name="cidade"]');
+    const datalist = document.getElementById("wiz-cidades");
+    if (!inputCidade || !datalist) return;
+    inputCidade.addEventListener("focus", function carregarCidades() {
+      inputCidade.removeEventListener("focus", carregarCidades);
+      fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
+        .then((r) => r.json())
+        .then((lista) => {
+          const frag = document.createDocumentFragment();
+          lista.forEach((m) => {
+            const uf = m?.microrregiao?.mesorregiao?.UF?.sigla;
+            const opt = document.createElement("option");
+            opt.value = uf ? `${m.nome} - ${uf}` : m.nome;
+            frag.appendChild(opt);
+          });
+          datalist.appendChild(frag);
+        })
+        .catch(() => {
+          // IBGE fora do ar ou sem internet: o campo continua funcionando normalmente, só sem sugestão.
+        });
+    }, { once: true });
+  })();
 
   // ---------- Equipe de apoio: switch liga/desliga + quantidade ----------
   (function () {
