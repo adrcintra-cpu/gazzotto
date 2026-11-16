@@ -379,9 +379,14 @@ import { contact, supabaseConfig } from "../data/media";
         grid.appendChild(card);
       });
       content.appendChild(grid);
+      const adicionaisPacote = catalogo.categorias.find((c) => c.slug === "adicionais_brasa");
+      if (adicionaisPacote) {
+        const el = renderChipsCategoria(adicionaisPacote, state.selections.adicionais, 1);
+        if (el) content.appendChild(el);
+      }
       const nota = document.createElement("p");
       nota.className = "wiz__nota";
-      nota.textContent = "Quer incluir algum item que não está na lista? Conte pra gente no campo de observações, na próxima etapa — sujeito à disponibilidade.";
+      nota.textContent = "Quer incluir algum outro item que não está nas listas acima? Conte pra gente no campo de observações, na próxima etapa — sujeito à disponibilidade.";
       content.appendChild(nota);
     } else if (state.modalidade === "monte_cardapio") {
       titleEl.textContent = "Monte seu cardápio";
@@ -553,8 +558,9 @@ import { contact, supabaseConfig } from "../data/media";
       html += linhaResumo("Hambúrgueres", nomesSelecionados(state.selections.festival_burgers).join(", "));
       html += linhaResumo("Acompanhamentos", nomesSelecionados(state.selections.festival_acompanhamentos).join(", "));
       html += linhaResumo("Sobremesa", nomesSelecionados(state.selections.festival_sobremesas).join(", "));
-    } else {
-      html += linhaResumo("Itens", "A equipe Gazzotto vai apresentar os itens inclusos nesse cardápio.");
+    } else if (state.modalidade === "pacote") {
+      html += linhaResumo("Itens inclusos", itensDoPacote(state.pacoteId).map((i) => i.nome).join(", "));
+      html += linhaResumo("Adicionais na brasa", nomesSelecionados(state.selections.adicionais).join(", "));
     }
     html += "</section>";
 
@@ -646,6 +652,8 @@ import { contact, supabaseConfig } from "../data/media";
       const add = (set, contexto) => Array.from(set).forEach((itemId) => linhasItens.push({ orcamento_id: orcamentoId, item_id: itemId, contexto, quantidade: 1 }));
       if (state.modalidade === "monte_cardapio") {
         add(state.selections.monte_cardapio, "monte_cardapio");
+        add(state.selections.adicionais, "adicionais");
+      } else if (state.modalidade === "pacote") {
         add(state.selections.adicionais, "adicionais");
       } else if (state.modalidade === "festival_hamburguer") {
         add(state.selections.festival_burgers, "festival");
