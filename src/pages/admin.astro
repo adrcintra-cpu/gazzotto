@@ -85,18 +85,18 @@ import { supabaseConfig } from "../data/media";
           <h2>Pedidos recebidos</h2>
           <button type="button" class="admin__btn-ghost" data-reload-leads>Atualizar</button>
         </div>
-        <div class="admin__table-wrap">
-          <table class="admin__table" data-leads-table>
-            <thead>
-              <tr>
-                <th>Protocolo</th><th>Responsável</th><th>WhatsApp</th><th>Experiência</th>
-                <th>Evento</th><th>Data</th><th>Convidados</th><th>Status</th><th>Recebido em</th>
-              </tr>
-            </thead>
-            <tbody data-leads-body>
-              <tr><td colspan="9" class="admin__loading">Carregando…</td></tr>
-            </tbody>
-          </table>
+        <p class="admin__hint">Clique em um pedido para ver todos os detalhes e preparar o orçamento.</p>
+        <div class="admin__leads-grid" data-leads-grid>
+          <p class="admin__loading">Carregando…</p>
+        </div>
+      </div>
+
+      <!-- Modal de detalhes do lead -->
+      <div class="admin__lead-modal" data-lead-modal hidden>
+        <div class="admin__lead-modal-backdrop" data-lead-modal-fechar></div>
+        <div class="admin__lead-modal-card" role="dialog" aria-modal="true">
+          <button type="button" class="admin__lead-modal-x" data-lead-modal-fechar aria-label="Fechar">✕</button>
+          <div data-lead-modal-conteudo></div>
         </div>
       </div>
 
@@ -192,6 +192,22 @@ import { supabaseConfig } from "../data/media";
     pacote: "Cardápios Gazzotto",
     monte_cardapio: "Monte seu Cardápio",
     festival_hamburguer: "Festival de Hambúrguer",
+  };
+  const ESTRUTURA_LABELS = { parrilla_gazzotto: "Parrilla da Gazzotto", churrasqueira_local: "Churrasqueira disponível no local" };
+  const LOUCA_LABELS = { descartaveis: "Descartáveis", porcelana: "Louças de porcelana e talheres de inox" };
+  const STATUS_LABELS = {
+    novo: "Novo",
+    em_analise: "Em análise",
+    proposta_enviada: "Proposta enviada",
+    aprovado: "Aprovado",
+    cancelado: "Cancelado",
+  };
+  const CONTEXTO_LABELS = {
+    monte_cardapio: "Cardápio (Monte o seu)",
+    pacote: "Itens inclusos no pacote",
+    adicionais: "Adicionais na brasa",
+    festival: "Festival de Hambúrguer",
+    buffet: "Buffet",
   };
 
   let carregado = false;
@@ -366,36 +382,179 @@ import { supabaseConfig } from "../data/media";
   });
 
   // ---------- Leads ----------
+  // Dados vêm de um formulário público (sem login) -- nunca confiamos no texto livre pra montar
+  // HTML diretamente, por segurança (evita que alguém injete tags/script num campo como nome ou
+  // observações e isso rode na tela do colaborador que abrir o pedido).
+  function esc(valor) {
+    return String(valor == null ? "" : valor).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
+  let leadsPorId = new Map();
+
   async function carregarLeads() {
-    const body = root.querySelector("[data-leads-body]");
-    body.innerHTML = '<tr><td colspan="9" class="admin__loading">Carregando…</td></tr>';
+    const grid = root.querySelector("[data-leads-grid]");
+    grid.innerHTML = '<p class="admin__loading">Carregando…</p>';
     const { data, error } = await supabase
       .from("orcamentos")
-      .select("protocolo, nome_responsavel, whatsapp, modalidade, tipo_evento, data_evento, qtd_adultos, qtd_criancas, status, created_at")
+      .select(`
+        *,
+        pacotes ( nome, descricao, pacote_regras ( pacote_regra_itens ( itens ( nome ) ) ) ),
+        orcamento_itens ( item_id, contexto, quantidade, observacao, itens ( nome ) )
+      `)
       .order("created_at", { ascending: false });
     if (error) {
-      body.innerHTML = '<tr><td colspan="9" class="admin__erro-cel">Erro ao carregar: ' + error.message + "</td></tr>";
+      grid.innerHTML = '<p class="admin__erro-cel">Erro ao carregar: ' + esc(error.message) + "</p>";
       return;
     }
+    leadsPorId = new Map(data.map((o) => [o.id, o]));
     if (!data.length) {
-      body.innerHTML = '<tr><td colspan="9" class="admin__loading">Nenhum pedido recebido ainda.</td></tr>';
+      grid.innerHTML = '<p class="admin__loading">Nenhum pedido recebido ainda.</p>';
       return;
     }
-    body.innerHTML = data.map((o) => `
-      <tr>
-        <td>${o.protocolo}</td>
-        <td>${o.nome_responsavel}</td>
-        <td><a href="https://wa.me/${o.whatsapp}" target="_blank" rel="noopener">${o.whatsapp}</a></td>
-        <td>${MODALIDADE_LABELS[o.modalidade] || o.modalidade}</td>
-        <td>${o.tipo_evento || "-"}</td>
-        <td>${o.data_evento ? new Date(o.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "-"}</td>
-        <td>${o.qtd_adultos || 0}${o.qtd_criancas ? " + " + o.qtd_criancas + "c" : ""}</td>
-        <td><span class="admin__status">${o.status}</span></td>
-        <td>${new Date(o.created_at).toLocaleString("pt-BR")}</td>
-      </tr>
+    grid.innerHTML = data.map((o) => `
+      <button type="button" class="admin__lead-card" data-lead-id="${o.id}">
+        <div class="admin__lead-card-top">
+          <span class="admin__lead-card-protocolo">${esc(o.protocolo)}</span>
+          <span class="admin__status admin__status--${esc(o.status)}">${STATUS_LABELS[o.status] || esc(o.status)}</span>
+        </div>
+        <h3>${esc(o.nome_responsavel)}</h3>
+        <p class="admin__lead-card-info">${MODALIDADE_LABELS[o.modalidade] || esc(o.modalidade)} · ${esc(o.tipo_evento) || "-"}</p>
+        <p class="admin__lead-card-info">${o.data_evento ? new Date(o.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "sem data"} · ${o.qtd_adultos || 0} adultos${o.qtd_criancas ? " + " + o.qtd_criancas + "c" : ""}</p>
+        <p class="admin__lead-card-recebido">Recebido em ${new Date(o.created_at).toLocaleString("pt-BR")}</p>
+      </button>
     `).join("");
   }
   root.querySelector("[data-reload-leads]").addEventListener("click", carregarLeads);
+
+  root.querySelector("[data-leads-grid]").addEventListener("click", (e) => {
+    const card = e.target.closest("[data-lead-id]");
+    if (!card) return;
+    const lead = leadsPorId.get(card.dataset.leadId);
+    if (lead) abrirLead(lead);
+  });
+
+  // ---------- Modal de detalhes do lead ----------
+  const leadModal = root.querySelector("[data-lead-modal]");
+  const leadModalConteudo = leadModal.querySelector("[data-lead-modal-conteudo]");
+
+  function fecharLeadModal() {
+    leadModal.hidden = true;
+    leadModalConteudo.innerHTML = "";
+  }
+  leadModal.querySelectorAll("[data-lead-modal-fechar]").forEach((el) => el.addEventListener("click", fecharLeadModal));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !leadModal.hidden) fecharLeadModal(); });
+
+  function linha(label, valor) {
+    if (valor === null || valor === undefined || valor === "") return "";
+    return `<div class="admin__lead-linha"><strong>${label}</strong><span>${valor}</span></div>`;
+  }
+
+  function itensDoPacote(pacote) {
+    if (!pacote?.pacote_regras) return [];
+    return pacote.pacote_regras.flatMap((r) => (r.pacote_regra_itens || []).map((ri) => ri.itens?.nome)).filter(Boolean);
+  }
+
+  function abrirLead(o) {
+    const porContexto = {};
+    (o.orcamento_itens || []).forEach((oi) => {
+      const nome = oi.itens?.nome;
+      if (!nome) return;
+      (porContexto[oi.contexto] ||= []).push(nome + (oi.quantidade > 1 ? ` (×${oi.quantidade})` : ""));
+    });
+
+    let html = `<h3 class="admin__lead-modal-titulo">${esc(o.protocolo)}</h3>`;
+
+    html += '<section class="admin__lead-secao"><h4>Responsável</h4>';
+    html += linha("Nome", esc(o.nome_responsavel));
+    html += linha("WhatsApp", `<a href="https://wa.me/${esc(o.whatsapp)}" target="_blank" rel="noopener">${esc(o.whatsapp)}</a>`);
+    html += "</section>";
+
+    html += '<section class="admin__lead-secao"><h4>Evento</h4>';
+    html += linha("Experiência", MODALIDADE_LABELS[o.modalidade] || esc(o.modalidade));
+    html += linha("Tipo de evento", esc(o.tipo_evento));
+    html += linha("Data", o.data_evento ? new Date(o.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "");
+    html += linha("Horário", o.horario_inicio ? o.horario_inicio.slice(0, 5) : "");
+    html += linha("Local", esc([o.endereco, o.cidade].filter(Boolean).join(", ")));
+    html += linha("Preparo do churrasco", ESTRUTURA_LABELS[o.estrutura_churrasco] || "");
+    html += "</section>";
+
+    html += '<section class="admin__lead-secao"><h4>Convidados</h4>';
+    html += linha("Adultos", String(o.qtd_adultos || 0));
+    html += linha("Crianças (até 12 anos)", o.qtd_criancas ? String(o.qtd_criancas) : "");
+    html += linha("Equipe de apoio / fornecedores", o.qtd_equipe_apoio ? String(o.qtd_equipe_apoio) + " pessoas" : "");
+    html += "</section>";
+
+    html += '<section class="admin__lead-secao"><h4>Cardápio</h4>';
+    if (o.modalidade === "pacote" && o.pacotes) {
+      html += linha("Pacote", esc(o.pacotes.nome));
+      const inclusos = itensDoPacote(o.pacotes);
+      if (inclusos.length) html += linha("Itens inclusos", esc(inclusos.join(", ")));
+    }
+    Object.keys(CONTEXTO_LABELS).forEach((ctx) => {
+      if (ctx === "pacote" || !porContexto[ctx]) return;
+      html += linha(CONTEXTO_LABELS[ctx], esc(porContexto[ctx].join(", ")));
+    });
+    html += linha("Buffet", o.deseja_buffet ? "Sim" + (o.tipo_louca ? " — " + (LOUCA_LABELS[o.tipo_louca] || "") : "") : "Não");
+    html += "</section>";
+
+    if (o.observacoes) {
+      html += '<section class="admin__lead-secao"><h4>Observações do cliente</h4>';
+      html += `<p class="admin__lead-obs-cliente">${esc(o.observacoes)}</p>`;
+      html += "</section>";
+    }
+
+    html += '<section class="admin__lead-secao"><h4>Administração</h4>';
+    html += `
+      <form class="admin__lead-form" data-lead-form data-lead-id="${o.id}">
+        <label class="admin__field">
+          <span>Status</span>
+          <select name="status">
+            ${Object.entries(STATUS_LABELS).map(([v, l]) => `<option value="${v}" ${v === o.status ? "selected" : ""}>${l}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin__field">
+          <span>Valor do orçamento (R$)</span>
+          <input type="number" name="valor_manual" step="0.01" min="0" value="${o.valor_manual ?? ""}" placeholder="ainda não definido" />
+        </label>
+        <label class="admin__field admin__field--full">
+          <span>Observações internas (só a equipe vê)</span>
+          <textarea name="observacoes_internas" rows="3">${esc(o.observacoes_internas || "")}</textarea>
+        </label>
+        <button type="submit" class="btn btn--red">Salvar</button>
+        <span class="admin__lead-form-msg" data-lead-form-msg hidden></span>
+      </form>
+    `;
+    html += "</section>";
+
+    html += `<p class="admin__lead-recebido-full">Recebido em ${new Date(o.created_at).toLocaleString("pt-BR")}</p>`;
+
+    leadModalConteudo.innerHTML = html;
+    leadModal.hidden = false;
+
+    leadModalConteudo.querySelector("[data-lead-form]").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const msg = form.querySelector("[data-lead-form-msg]");
+      const fd = new FormData(form);
+      const valorStr = fd.get("valor_manual");
+      const { error } = await supabase.from("orcamentos").update({
+        status: fd.get("status"),
+        valor_manual: valorStr === "" ? null : Number(valorStr),
+        observacoes_internas: fd.get("observacoes_internas") || null,
+      }).eq("id", form.dataset.leadId);
+      msg.hidden = false;
+      if (error) {
+        msg.textContent = "Erro ao salvar: " + error.message;
+        msg.style.color = "var(--burger)";
+      } else {
+        msg.textContent = "Salvo.";
+        msg.style.color = "var(--chicken)";
+        carregarLeads();
+      }
+    });
+  }
 
   // ---------- Notificações ----------
   async function carregarContatos() {
@@ -621,4 +780,52 @@ import { supabaseConfig } from "../data/media";
 .admin__senha-gerada p { color: var(--cream); font-size: .85rem; margin: 0 0 .4rem; }
 .admin__senha-gerada p:last-child { margin-bottom: 0; }
 .admin__senha-gerada code { padding: .2rem .5rem; border-radius: 5px; background: color-mix(in srgb, var(--bg-dark) 85%, white 15%); color: var(--chicken); font-weight: 700; letter-spacing: .03em; }
+
+/* Leads em cards + modal de detalhes */
+.admin__leads-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.admin__lead-card {
+  text-align: left; background: var(--card, color-mix(in srgb, var(--bg-dark) 92%, white 8%));
+  border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem; cursor: pointer; color: var(--text);
+  display: flex; flex-direction: column; gap: .35rem; font: inherit;
+}
+.admin__lead-card:hover { border-color: var(--chicken); }
+.admin__lead-card-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.admin__lead-card-protocolo { font-size: .7rem; color: var(--muted); letter-spacing: .02em; }
+.admin__lead-card h3 { font: 700 1rem var(--font-body); color: var(--cream); margin: 0; }
+.admin__lead-card-info { font-size: .8rem; color: var(--text); margin: 0; }
+.admin__lead-card-recebido { font-size: .7rem; color: var(--muted); margin: .2rem 0 0; }
+
+.admin__status { text-transform: capitalize; padding: .2rem .55rem; border-radius: 999px; font-size: .68rem; font-weight: 700; white-space: nowrap; background: color-mix(in srgb, var(--fish) 30%, transparent); color: var(--cream); }
+.admin__status--novo { background: color-mix(in srgb, var(--chicken) 30%, transparent); color: var(--chicken); }
+.admin__status--em_analise { background: color-mix(in srgb, var(--fish) 35%, transparent); }
+.admin__status--proposta_enviada { background: color-mix(in srgb, #3b82f6 30%, transparent); color: #93c5fd; }
+.admin__status--aprovado { background: color-mix(in srgb, #22c55e 30%, transparent); color: #86efac; }
+.admin__status--cancelado { background: color-mix(in srgb, var(--burger) 30%, transparent); color: #fca5a5; }
+
+.admin__lead-modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.admin__lead-modal[hidden] { display: none; }
+.admin__lead-modal-backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / .6); }
+.admin__lead-modal-card {
+  position: relative; z-index: 1; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
+  background: var(--bg-dark); border: 1px solid var(--line); border-radius: 14px; padding: 2rem 1.8rem;
+}
+.admin__lead-modal-x { position: absolute; top: 1rem; right: 1rem; background: transparent; border: 0; color: var(--muted); font-size: 1.1rem; cursor: pointer; line-height: 1; padding: .3rem; }
+.admin__lead-modal-x:hover { color: var(--cream); }
+.admin__lead-modal-titulo { font: 400 1.2rem var(--font-display); color: var(--cream); margin: 0 0 1.2rem; }
+.admin__lead-secao { margin-bottom: 1.4rem; }
+.admin__lead-secao h4 { font: 700 .78rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; color: var(--chicken); margin: 0 0 .6rem; }
+.admin__lead-linha { display: grid; grid-template-columns: 11rem 1fr; gap: .5rem; font-size: .84rem; padding: .3rem 0; border-bottom: 1px solid var(--line); }
+.admin__lead-linha strong { color: var(--muted); font-weight: 600; }
+.admin__lead-linha span { color: var(--text); }
+.admin__lead-linha a { color: var(--chicken); }
+.admin__lead-obs-cliente { font-size: .84rem; color: var(--text); background: color-mix(in srgb, var(--bg-dark) 85%, white 15%); border-radius: 8px; padding: .8rem 1rem; margin: 0; white-space: pre-wrap; }
+.admin__lead-recebido-full { font-size: .72rem; color: var(--muted); margin: 1rem 0 0; }
+
+.admin__field select, .admin__field textarea { padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; font-size: .9rem; }
+.admin__field select { color-scheme: dark; }
+.admin__field--full { grid-column: 1 / -1; }
+.admin__lead-form { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; align-items: end; }
+.admin__lead-form button { grid-column: span 1; justify-self: start; }
+.admin__lead-form-msg { font-size: .8rem; align-self: center; }
+@media (max-width: 560px) { .admin__lead-form { grid-template-columns: 1fr; } }
 </style>
