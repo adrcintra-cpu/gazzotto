@@ -355,7 +355,14 @@ body::before, .story::before, .moments::before, .footer::before, .footer__bottom
 .menu__back h3 { font-size: 1.5rem; line-height: 1.1; letter-spacing: .02em; }
 
 /* WhatsApp flutuante */
-.wa-float { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 30; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; padding: 0; border-radius: 50%; background: #25d366; color: #fff; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / .35); transition: transform .2s, box-shadow .2s; }
+/* touch-action:manipulation -- em alguns celulares (principalmente iPhone), um botão redondo
+   fixo no canto da tela, isolado do resto do conteúdo, pode ter o primeiro toque "engolido"
+   pelo gesto nativo de dar zoom com duplo toque: o navegador espera pra ver se vem um segundo
+   toque antes de decidir se foi um clique, e nesse meio tempo pode não disparar nada visível --
+   essa é a causa mais comum relatada como "toco e não acontece nada" nesse tipo de botão.
+   touch-action:manipulation desliga esse gesto de zoom só neste elemento e faz o toque valer
+   na hora. tap-highlight-color:transparent só tira o flash cinza padrão do toque, cosmético. */
+.wa-float { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 30; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; padding: 0; border-radius: 50%; background: #25d366; color: #fff; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / .35); transition: transform .2s, box-shadow .2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .wa-float:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 12px 30px rgb(0 0 0 / .45); }
 .wa-float svg { flex: none; }
 .wa-float__tip { position: absolute; right: calc(100% + .7rem); top: 50%; transform: translateY(-50%); padding: .45rem .8rem; border-radius: 999px; background: rgb(20 21 24 / .92); color: var(--fish); font: 600 .85rem var(--font-body); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; }
