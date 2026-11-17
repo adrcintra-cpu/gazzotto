@@ -136,6 +136,20 @@ import { supabaseConfig } from "../data/media";
           <button type="submit" class="btn btn--red">Enviar convite</button>
         </form>
         <p class="admin__erro" data-convite-msg hidden></p>
+
+        <div class="admin__toolbar" style="margin-top:2rem">
+          <h2>Quem tem acesso</h2>
+          <button type="button" class="admin__btn-ghost" data-reload-colaboradores>Atualizar</button>
+        </div>
+        <div class="admin__table-wrap">
+          <table class="admin__table" data-colaboradores-table>
+            <thead><tr><th>E-mail</th><th>Status</th><th>Último acesso</th><th></th></tr></thead>
+            <tbody data-colaboradores-body>
+              <tr><td colspan="4" class="admin__loading">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="admin__erro" data-colaboradores-msg hidden></p>
       </div>
     </section>
   </main>
@@ -183,15 +197,19 @@ import { supabaseConfig } from "../data/media";
     senhaView.hidden = false;
   }
 
-  function mostrarPainel(email) {
+  let meuUserId = null;
+
+  function mostrarPainel(email, userId) {
     loginView.hidden = true;
     senhaView.hidden = true;
     panelView.hidden = false;
     root.querySelector("[data-usuario-logado]").textContent = email || "";
+    if (userId) meuUserId = userId;
     if (!carregado) {
       carregado = true;
       carregarLeads();
       carregarContatos();
+      carregarColaboradores();
     }
   }
 
@@ -199,14 +217,14 @@ import { supabaseConfig } from "../data/media";
   async function verificarSessao() {
     const { data: { session } } = await supabase.auth.getSession();
     if (session && aguardandoSenha) mostrarDefinirSenha();
-    else if (session) mostrarPainel(session.user.email);
+    else if (session) mostrarPainel(session.user.email, session.user.id);
     else mostrarLogin();
   }
   verificarSessao();
 
   supabase.auth.onAuthStateChange((_evento, session) => {
     if (session && aguardandoSenha) mostrarDefinirSenha();
-    else if (session) mostrarPainel(session.user.email);
+    else if (session) mostrarPainel(session.user.email, session.user.id);
     else mostrarLogin();
   });
 
@@ -229,7 +247,7 @@ import { supabaseConfig } from "../data/media";
     aguardandoSenha = false;
     history.replaceState(null, "", window.location.pathname);
     senhaForm.reset();
-    mostrarPainel(data.user?.email);
+    mostrarPainel(data.user?.email, data.user?.id);
   });
 
   loginForm.addEventListener("submit", async (e) => {
@@ -248,7 +266,7 @@ import { supabaseConfig } from "../data/media";
     loginForm.reset();
     // Mostra o painel na hora, sem depender só do onAuthStateChange (no Safari esse aviso
     // às vezes demora/não dispara a tempo, e a tela ficava voltando pro login em branco).
-    mostrarPainel(data.user?.email);
+    mostrarPainel(data.user?.email, data.user?.id);
   });
 
   // ---------- Esqueci minha senha ----------
@@ -443,12 +461,77 @@ import { supabaseConfig } from "../data/media";
       conviteMsg.style.color = "var(--chicken)";
       conviteMsg.hidden = false;
       form.reset();
+      carregarColaboradores();
     } catch (err) {
       conviteMsg.textContent = "Não foi possível enviar o convite: " + err.message;
       conviteMsg.style.color = "var(--burger)";
       conviteMsg.hidden = false;
     }
   });
+
+  // ---------- Quem tem acesso (listar/excluir) ----------
+  const colaboradoresMsg = root.querySelector("[data-colaboradores-msg]");
+
+  async function carregarColaboradores() {
+    const body = root.querySelector("[data-colaboradores-body]");
+    body.innerHTML = '<tr><td colspan="4" class="admin__loading">Carregando…</td></tr>';
+    colaboradoresMsg.hidden = true;
+    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/colaboradores`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_KEY },
+      });
+      const resultado = await resp.json();
+      if (!resp.ok || !resultado.ok) throw new Error(resultado.error || "falha ao carregar colaboradores");
+      const lista = resultado.colaboradores || [];
+      if (!lista.length) {
+        body.innerHTML = '<tr><td colspan="4" class="admin__loading">Nenhum colaborador encontrado.</td></tr>';
+        return;
+      }
+      body.innerHTML = lista.map((c) => {
+        const souEu = c.id === meuUserId;
+        return `
+        <tr data-colaborador-row="${c.id}">
+          <td>${c.email}${souEu ? " (você)" : ""}</td>
+          <td>${c.confirmado ? "Ativo" : "Convite pendente"}</td>
+          <td>${c.ultimo_acesso ? new Date(c.ultimo_acesso).toLocaleString("pt-BR") : "nunca acessou"}</td>
+          <td>${souEu ? "" : `<button type="button" class="admin__btn-ghost admin__btn-small" data-excluir-colaborador="${c.id}">Excluir</button>`}</td>
+        </tr>
+      `;
+      }).join("");
+
+      body.querySelectorAll("[data-excluir-colaborador]").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          const id = e.target.dataset.excluirColaborador;
+          const email = e.target.closest("tr").querySelector("td").textContent;
+          if (!confirm(`Remover o acesso de ${email} ao painel? Essa ação não pode ser desfeita.`)) return;
+          colaboradoresMsg.hidden = true;
+          try {
+            const resp = await fetch(`${SUPABASE_URL}/functions/v1/colaboradores`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+                apikey: SUPABASE_KEY,
+              },
+              body: JSON.stringify({ action: "excluir", id }),
+            });
+            const resultado = await resp.json();
+            if (!resp.ok || !resultado.ok) throw new Error(resultado.error || "falha ao excluir");
+            carregarColaboradores();
+          } catch (err) {
+            colaboradoresMsg.textContent = "Não foi possível excluir: " + err.message;
+            colaboradoresMsg.style.color = "var(--burger)";
+            colaboradoresMsg.hidden = false;
+          }
+        });
+      });
+    } catch (err) {
+      body.innerHTML = '<tr><td colspan="4" class="admin__erro-cel">Erro ao carregar: ' + err.message + "</td></tr>";
+    }
+  }
+  root.querySelector("[data-reload-colaboradores]").addEventListener("click", carregarColaboradores);
 </script>
 
 <style is:global>
