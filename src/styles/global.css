@@ -378,17 +378,20 @@ body::before, .story::before, .moments::before, .footer::before, .footer__bottom
 @media (max-width: 520px) { .wa-float { right: .9rem; bottom: .9rem; } }
 /* Enquanto o aviso de cookies está na tela, ele ficava por cima do botão do WhatsApp (mesmo
    canto) -- em alguns celulares o toque acabava caindo no link "Política de Privacidade" do
-   aviso em vez de abrir o WhatsApp. A solução antiga escondia o botão (opacity:0 +
-   pointer-events:none) até a pessoa responder o aviso -- só que quem não clica logo em
-   "Aceitar"/"Recusar" ficava com o botão invisível e sem reagir ao toque, parecendo "quebrado".
-   Agora, em vez de esconder, subimos o botão para cima do aviso: a altura real do aviso (varia
-   com o tamanho da tela/texto) é medida em CookieConsent.astro e fica em --cookie-banner-h. */
-body.tem-cookie-consent .wa-float {
-  bottom: calc(1.2rem + var(--cookie-banner-h, 0px) + .6rem);
-  transition: bottom .2s, transform .2s, box-shadow .2s;
-}
+   aviso em vez de abrir o WhatsApp. Uma versão anterior escondia o botão (opacity:0 +
+   pointer-events:none) até a pessoa responder o aviso -- só que quem não clicava logo em
+   "Aceitar"/"Recusar" ficava com o botão invisível e sem reagir ao toque.
+   Depois tentamos medir a altura real do aviso por JS (--cookie-banner-h) pra subir o botão só
+   o necessário -- só que isso depende de um cálculo assíncrono (requestAnimationFrame) que pode
+   não terminar a tempo em alguns aparelhos/conexões mais lentas, ou ficar desatualizado se o
+   texto quebrar linha de um jeito diferente depois da medição (fonte carregando, etc.) --
+   resultando no botão ainda ficando atrás do aviso em alguns celulares, sem erro nenhum visível.
+   Agora é um valor fixo e generoso (sem depender de medir nada): sempre alto o suficiente pra
+   cobrir o aviso no pior caso (texto em 2-3 linhas + botões empilhados no mobile), então pode
+   sobrar um espacinho vazio embaixo do botão às vezes, mas ele nunca fica embaixo do aviso. */
+body.tem-cookie-consent .wa-float { bottom: 9rem; }
 @media (max-width: 520px) {
-  body.tem-cookie-consent .wa-float { bottom: calc(.9rem + var(--cookie-banner-h, 0px) + .6rem); }
+  body.tem-cookie-consent .wa-float { bottom: 12rem; }
 }
 
 /* Cards de vantagens (abaixo do banner): efeitos de hover */

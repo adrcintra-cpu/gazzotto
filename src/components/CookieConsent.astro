@@ -24,32 +24,18 @@
   try { escolhaSalva = localStorage.getItem(CHAVE); } catch (e) { escolhaSalva = null; }
   if (escolhaSalva) return;
 
-  // Altura real do aviso (muda com o tamanho da tela e com o texto quebrando linha) para o
-  // botão do WhatsApp subir exatamente o suficiente e não ficar escondido atrás do aviso.
-  function medirAltura() {
-    try {
-      document.documentElement.style.setProperty("--cookie-banner-h", el.getBoundingClientRect().height + "px");
-    } catch (e) {}
-  }
-
   // Mostra com um pequeno atraso, já depois do primeiro paint, para não brigar com o
   // carregamento inicial da página.
   setTimeout(function () {
     el.hidden = false;
     document.body.classList.add("tem-cookie-consent");
-    requestAnimationFrame(function () {
-      el.classList.add("is-visivel");
-      medirAltura();
-    });
-    window.addEventListener("resize", medirAltura);
+    requestAnimationFrame(function () { el.classList.add("is-visivel"); });
   }, 600);
 
   function responder(valor) {
     try { localStorage.setItem(CHAVE, valor); } catch (e) {}
     el.classList.remove("is-visivel");
     document.body.classList.remove("tem-cookie-consent");
-    window.removeEventListener("resize", medirAltura);
-    document.documentElement.style.removeProperty("--cookie-banner-h");
     setTimeout(function () { el.hidden = true; }, 400);
   }
 
