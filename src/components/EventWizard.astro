@@ -1006,7 +1006,13 @@ import { contact, supabaseConfig } from "../data/media";
 .wiz__switch input:checked + .wiz__switch-track .wiz__switch-thumb { transform: translateX(18px); }
 .wiz__switch input:focus-visible + .wiz__switch-track { outline: 2px solid var(--chicken); outline-offset: 2px; }
 .wiz__switch-label { font-size: .85rem; color: var(--cream); font-weight: 600; }
-@media (max-width: 640px) { .wiz__fgroup { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .wiz__fgroup { grid-template-columns: 1fr; }
+  /* iOS Safari dá zoom sozinho na página ao focar um campo com font-size menor que 16px --
+     some como um "pulo"/travada na tela bem na hora de tocar no campo. 16px evita esse zoom
+     automático em todos os campos do formulário, não só nos que já tiveram esse problema. */
+  .wiz__field input, .wiz__field select, .wiz__field textarea { font-size: 16px; }
+}
 
 /* Navegação entre etapas */
 .wiz__nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.6rem; gap: 1rem; }
