@@ -714,11 +714,26 @@ import { contact, supabaseConfig } from "../data/media";
       if (!validarEtapa2()) { alert("Escolha ao menos uma opção para continuar."); return; }
       goToStep(3);
     } else if (currentStep === 3) {
-      if (!formEvento.reportValidity()) return;
+      if (!formEvento.reportValidity()) { destacarCampoInvalido(); return; }
       coletarEtapa3();
       goToStep(4);
     }
   }));
+
+  // Quando um campo obrigatório fica em branco (ex.: nenhuma opção marcada em "Onde será
+  // preparado o churrasco?"), o navegador só rola a tela até ele -- em muitos celulares não
+  // aparece nenhum aviso visual. Aqui destacamos o campo por alguns segundos pra ficar óbvio
+  // o porquê de não ter avançado.
+  function destacarCampoInvalido() {
+    const campo = formEvento.querySelector(":invalid");
+    if (!campo) return;
+    const container = campo.closest(".wiz__field") || campo.closest("fieldset");
+    if (container) {
+      container.classList.add("wiz__field--erro");
+      setTimeout(() => container.classList.remove("wiz__field--erro"), 3000);
+    }
+    campo.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
   wizRoot.querySelector("[data-enviar]").addEventListener("click", enviarOrcamento);
 
   // ---------- Animação de entrada (fade + leve subida), mesmo padrão de .moments__head ----------
@@ -848,6 +863,10 @@ import { contact, supabaseConfig } from "../data/media";
    HTML "hidden" (mesma especificidade, e CSS de autor sempre vence o estilo do navegador).
    Sem isto, campos condicionais como "Quantidade de pessoas" (equipe) e "Louças" ficavam sempre visíveis. */
 .wiz__field[hidden] { display: none; }
+/* Destaque temporário quando o campo fica obrigatório e sem preencher (ver destacarCampoInvalido). */
+.wiz__field--erro { outline: 2px solid var(--burger); outline-offset: 6px; border-radius: 8px; animation: wiz-shake .35s; }
+.wiz__field--erro > span:first-child { color: var(--burger); }
+@keyframes wiz-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .wiz__field input, .wiz__field select, .wiz__field textarea {
   padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
   background: transparent; color: var(--cream); font: inherit; font-size: .85rem;
