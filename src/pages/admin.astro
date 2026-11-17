@@ -75,9 +75,9 @@ import { supabaseConfig } from "../data/media";
       </div>
 
       <nav class="admin__tabs" aria-label="Seções do painel">
-        <button type="button" class="admin__tab is-active" data-tab="leads">Leads</button>
+        <button type="button" class="admin__tab is-active" data-tab="leads">Leads<span class="admin__tab-badge" data-tab-badge="leads" hidden>0</span></button>
         <button type="button" class="admin__tab" data-tab="notificacoes">Notificações WhatsApp</button>
-        <button type="button" class="admin__tab" data-tab="contato-formulario">Contato Formulário</button>
+        <button type="button" class="admin__tab" data-tab="contato-formulario">Contato Formulário<span class="admin__tab-badge" data-tab-badge="contato-formulario" hidden>0</span></button>
         <button type="button" class="admin__tab" data-tab="colaboradores">Colaboradores</button>
       </nav>
 
@@ -399,6 +399,9 @@ import { supabaseConfig } from "../data/media";
     tab.addEventListener("click", () => {
       root.querySelectorAll("[data-tab]").forEach((t) => t.classList.toggle("is-active", t === tab));
       root.querySelectorAll("[data-tab-panel]").forEach((p) => { p.hidden = p.dataset.tabPanel !== tab.dataset.tab; });
+      // "Contato Formulário" não tem um modal de detalhe por item (como o Leads tem) -- então
+      // marca tudo como visto ao abrir a aba, que é o momento em que a pessoa de fato olhou.
+      if (tab.dataset.tab === "contato-formulario") marcarContatoFormularioComoVisto();
     });
   });
 
@@ -410,6 +413,14 @@ import { supabaseConfig } from "../data/media";
     return String(valor == null ? "" : valor).replace(/[&<>"']/g, (c) => (
       { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
     ));
+  }
+
+  // Número de "não vistos" ao lado do nome da aba (Leads / Contato Formulário).
+  function atualizarBadgeAba(aba, contagem) {
+    const el = root.querySelector(`[data-tab-badge="${aba}"]`);
+    if (!el) return;
+    el.textContent = String(contagem);
+    el.hidden = contagem <= 0;
   }
 
   let leadsPorId = new Map();
@@ -430,6 +441,7 @@ import { supabaseConfig } from "../data/media";
       return;
     }
     leadsPorId = new Map(data.map((o) => [o.id, o]));
+    atualizarBadgeAba("leads", data.filter((o) => !o.visualizado_em).length);
     if (!data.length) {
       grid.innerHTML = '<p class="admin__loading">Nenhum pedido recebido ainda.</p>';
       return;
@@ -497,6 +509,7 @@ import { supabaseConfig } from "../data/media";
       card.classList.remove("admin__lead-card--novo");
       card.querySelector(".admin__lead-card-badge")?.remove();
     }
+    atualizarBadgeAba("leads", [...leadsPorId.values()].filter((l) => !l.visualizado_em).length);
     const { error } = await supabase.from("orcamentos").update({ visualizado_em: agora }).eq("id", o.id);
     if (error) console.error("erro ao marcar lead como visto:", error);
   }
@@ -685,12 +698,13 @@ import { supabaseConfig } from "../data/media";
     body.innerHTML = '<tr><td colspan="5" class="admin__loading">Carregando…</td></tr>';
     const { data, error } = await supabase
       .from("contatos_formulario")
-      .select("id, nome, email, telefone, mensagem, created_at")
+      .select("id, nome, email, telefone, mensagem, created_at, visualizado_em")
       .order("created_at", { ascending: false });
     if (error) {
       body.innerHTML = '<tr><td colspan="5" class="admin__erro-cel">Erro ao carregar: ' + esc(error.message) + "</td></tr>";
       return;
     }
+    atualizarBadgeAba("contato-formulario", data.filter((c) => !c.visualizado_em).length);
     if (!data.length) {
       body.innerHTML = '<tr><td colspan="5" class="admin__loading">Nenhuma mensagem recebida ainda.</td></tr>';
       return;
@@ -699,8 +713,8 @@ import { supabaseConfig } from "../data/media";
       const mensagem = c.mensagem || "";
       const resumo = mensagem.length > 80 ? mensagem.slice(0, 80) + "…" : mensagem;
       return `
-      <tr>
-        <td>${esc(c.nome)}</td>
+      <tr${c.visualizado_em ? "" : ' class="admin__linha-novo"'}>
+        <td>${c.visualizado_em ? "" : '<span class="admin__lead-card-badge">Novo</span> '}${esc(c.nome)}</td>
         <td>${[esc(c.email), esc(c.telefone)].filter(Boolean).join(" · ")}</td>
         <td title="${esc(mensagem)}">${esc(resumo) || "-"}</td>
         <td>${new Date(c.created_at).toLocaleString("pt-BR")}</td>
@@ -719,6 +733,14 @@ import { supabaseConfig } from "../data/media";
     });
   }
   root.querySelector("[data-reload-contato-formulario]").addEventListener("click", carregarContatoFormulario);
+
+  async function marcarContatoFormularioComoVisto() {
+    const badge = root.querySelector('[data-tab-badge="contato-formulario"]');
+    if (badge.hidden) return; // já está tudo visto, não precisa gastar uma chamada
+    atualizarBadgeAba("contato-formulario", 0);
+    await supabase.from("contatos_formulario").update({ visualizado_em: new Date().toISOString() }).is("visualizado_em", null);
+    carregarContatoFormulario();
+  }
 
   // ---------- Convidar colaborador ----------
   const conviteMsg = root.querySelector("[data-convite-msg]");
@@ -865,6 +887,8 @@ import { supabaseConfig } from "../data/media";
 .admin__tabs { display: flex; gap: .5rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
 .admin__tab { background: transparent; border: 0; color: var(--muted); padding: .7rem 1rem; cursor: pointer; font: 600 .82rem var(--font-body); border-bottom: 2px solid transparent; }
 .admin__tab.is-active { color: var(--cream); border-bottom-color: var(--burger); }
+.admin__tab-badge { display: inline-grid; place-items: center; min-width: 1.3rem; height: 1.3rem; margin-left: .4rem; padding: 0 .35rem; border-radius: 999px; background: var(--burger); color: #fff; font: 700 .72rem var(--font-body); vertical-align: middle; }
+.admin__tab-badge[hidden] { display: none; }
 
 .admin__toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
 .admin__toolbar h2 { font: 700 1rem var(--font-body); color: var(--cream); }
@@ -874,6 +898,7 @@ import { supabaseConfig } from "../data/media";
 .admin__table th, .admin__table td { padding: .65rem .9rem; text-align: left; border-bottom: 1px solid var(--line); color: var(--text); }
 .admin__table th { color: var(--chicken); text-transform: uppercase; font-size: .68rem; letter-spacing: .04em; }
 .admin__table tbody tr:last-child td { border-bottom: 0; }
+.admin__linha-novo td { background: color-mix(in srgb, var(--chicken) 10%, transparent); }
 .admin__table a { color: var(--chicken); }
 .admin__loading, .admin__erro-cel { color: var(--muted); white-space: normal; }
 .admin__status { text-transform: capitalize; }
