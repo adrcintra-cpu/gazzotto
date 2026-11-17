@@ -37,8 +37,8 @@ export const media = {
   moments: [
     {
       quote:
-        "A experiência foi muito além do churrasco. A parrilla chamou a atenção desde o início e tudo foi servido com muito cuidado. A carne estava incrível e nossos convidados elogiaram muito.",
-      name: "Mariana e Rafael Oliveira",
+        "A galera amou o serviço! Foi tudo incrível, desde o atendimento até o cuidado com cada detalhe. Muito obrigada por tudo, vocês fizeram nosso evento ainda mais especial! Já temos nossos favoritos para os próximos eventos, com certeza! Hahahaha",
+      name: "Mariana",
       event: "Casamento",
     },
     {
