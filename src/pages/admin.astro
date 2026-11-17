@@ -547,7 +547,10 @@ import { supabaseConfig } from "../data/media";
           <span>Observações internas (só a equipe vê)</span>
           <textarea name="observacoes_internas" rows="3">${esc(o.observacoes_internas || "")}</textarea>
         </label>
-        <button type="submit" class="btn btn--red">Salvar</button>
+        <div class="admin__lead-form-acoes">
+          <button type="submit" class="btn btn--red">Salvar</button>
+          <button type="button" class="admin__btn-ghost" data-excluir-lead>Excluir pedido</button>
+        </div>
         <span class="admin__lead-form-msg" data-lead-form-msg hidden></span>
       </form>
     `;
@@ -578,6 +581,21 @@ import { supabaseConfig } from "../data/media";
         msg.style.color = "var(--chicken)";
         carregarLeads();
       }
+    });
+
+    leadModalConteudo.querySelector("[data-excluir-lead]").addEventListener("click", async (e) => {
+      const btn = e.target;
+      const protocolo = o.protocolo || "este pedido";
+      if (!confirm(`Excluir ${protocolo} definitivamente? Essa ação não pode ser desfeita.`)) return;
+      btn.disabled = true;
+      const { error } = await supabase.from("orcamentos").delete().eq("id", o.id);
+      if (error) {
+        alert("Erro ao excluir: " + error.message);
+        btn.disabled = false;
+        return;
+      }
+      fecharLeadModal();
+      carregarLeads();
     });
   }
 
@@ -852,7 +870,7 @@ import { supabaseConfig } from "../data/media";
 .admin__field select { color-scheme: dark; }
 .admin__field--full { grid-column: 1 / -1; }
 .admin__lead-form { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; align-items: end; }
-.admin__lead-form button { grid-column: span 1; justify-self: start; }
+.admin__lead-form-acoes { grid-column: span 1; display: flex; gap: .6rem; align-items: center; }
 .admin__lead-form-msg { font-size: .8rem; align-self: center; }
 @media (max-width: 560px) { .admin__lead-form { grid-template-columns: 1fr; } }
 </style>

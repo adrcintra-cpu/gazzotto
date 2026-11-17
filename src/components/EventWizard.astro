@@ -731,7 +731,11 @@ import { contact, supabaseConfig } from "../data/media";
   // aparece nenhum aviso visual. Aqui destacamos o campo por alguns segundos pra ficar óbvio
   // o porquê de não ter avançado.
   function destacarCampoInvalido() {
-    const campo = formEvento.querySelector(":invalid");
+    // :invalid também marca o <fieldset> que contém o campo com problema (o navegador propaga
+    // a validade dos filhos pra ele) -- e como o fieldset vem antes no HTML, um querySelector
+    // genérico pegava ele inteiro em vez do campo específico. Por isso restringe aos controles
+    // de formulário de verdade.
+    const campo = formEvento.querySelector("input:invalid, select:invalid, textarea:invalid");
     if (!campo) return;
     const container = campo.closest(".wiz__field") || campo.closest("fieldset");
     if (container) {
@@ -877,7 +881,15 @@ import { contact, supabaseConfig } from "../data/media";
   padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
   background: transparent; color: var(--cream); font: inherit; font-size: .85rem;
 }
-.wiz__field select { color-scheme: dark; }
+/* Sem appearance:none, o <select> mantém o estilo nativo do navegador por cima do padding
+   acima, ficando com altura diferente dos <input> ao lado (campo "Tipo de evento" desalinhado
+   da "Data"). Com appearance:none é preciso desenhar a setinha de novo na mão. */
+.wiz__field select {
+  color-scheme: dark;
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23f2d7ad' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.2rem;
+}
 .wiz__radios { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: .85rem; color: var(--cream); }
 .wiz__radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
 
