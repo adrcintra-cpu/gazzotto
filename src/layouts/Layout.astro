@@ -91,6 +91,23 @@ const jsonLd = {
         <span class="wa-float__tip">Fale conosco</span>
       </a>
     )}
+    <script is:inline>
+      // O botão flutuante do WhatsApp fica fixo no canto da tela (coordenadas da janela visível,
+      // não da página) -- com o teclado do celular aberto, a área visível encolhe e ele pode
+      // acabar bem em cima do próximo campo do formulário que a pessoa tenta tocar (ex.: depois
+      // de preencher a Data, ao tentar tocar em Cidade logo abaixo), bloqueando o toque mesmo sem
+      // nada aparecer de errado na tela. Por isso ele some sempre que algum campo de formulário
+      // estiver em foco (teclado provavelmente aberto) e volta assim que o foco sai.
+      (function () {
+        var waFloat = document.querySelector(".wa-float");
+        if (!waFloat) return;
+        function ehCampo(el) {
+          return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT");
+        }
+        document.addEventListener("focusin", function (e) { if (ehCampo(e.target)) waFloat.classList.add("wa-float--oculto"); });
+        document.addEventListener("focusout", function (e) { if (ehCampo(e.target)) waFloat.classList.remove("wa-float--oculto"); });
+      })();
+    </script>
     <CookieConsent />
   </body>
 </html>
