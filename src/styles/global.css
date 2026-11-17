@@ -363,6 +363,10 @@ body::before, .story::before, .moments::before, .footer::before, .footer__bottom
 @keyframes wa-pulse { 70% { box-shadow: 0 0 0 16px rgb(37 211 102 / 0); } 100% { box-shadow: 0 0 0 0 rgb(37 211 102 / 0); } }
 @media (prefers-reduced-motion: reduce) { .wa-float::before { animation: none; } .wa-float { transition: none; } }
 @media (max-width: 520px) { .wa-float { right: .9rem; bottom: .9rem; } }
+/* Enquanto o aviso de cookies está na tela, ele fica por cima do botão do WhatsApp (mesmo
+   canto, z-index maior) -- em alguns celulares o toque acabava caindo no link "Política de
+   Privacidade" do aviso em vez de abrir o WhatsApp. Escondemos o botão até o aviso sumir. */
+body.tem-cookie-consent .wa-float { opacity: 0; pointer-events: none; transition: opacity .2s; }
 
 /* Cards de vantagens (abaixo do banner): efeitos de hover */
 .perk { overflow: hidden; cursor: default; transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .3s, box-shadow .35s, background-color .35s; }

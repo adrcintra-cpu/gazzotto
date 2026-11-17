@@ -28,12 +28,14 @@
   // carregamento inicial da página.
   setTimeout(function () {
     el.hidden = false;
+    document.body.classList.add("tem-cookie-consent");
     requestAnimationFrame(function () { el.classList.add("is-visivel"); });
   }, 600);
 
   function responder(valor) {
     try { localStorage.setItem(CHAVE, valor); } catch (e) {}
     el.classList.remove("is-visivel");
+    document.body.classList.remove("tem-cookie-consent");
     setTimeout(function () { el.hidden = true; }, 400);
   }
 

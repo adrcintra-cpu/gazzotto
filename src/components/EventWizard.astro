@@ -432,7 +432,13 @@ import { contact, supabaseConfig } from "../data/media";
   // ---------- ETAPA 3 ----------
   const formEvento = wizRoot.querySelector("[data-form-evento]");
   const inputData = formEvento.querySelector("[data-data-evento]");
-  if (inputData) inputData.min = new Date().toISOString().slice(0, 10);
+  // new Date().toISOString() usa o horário UTC -- à noite no Brasil (de ~21h em diante) a data
+  // em UTC já virou o dia seguinte, o que marcava "hoje" como inválido (antes do mínimo) sem
+  // motivo aparente pro usuário. Monta a data de hoje usando as partes no horário local.
+  function dataLocalISO(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  if (inputData) inputData.min = dataLocalISO(new Date());
 
   // Sugestão de cidade ao digitar, usando a base pública e gratuita do IBGE (sem chave/API key).
   // Carrega só quando o campo recebe foco pela primeira vez, pra não pesar o carregamento da página.
