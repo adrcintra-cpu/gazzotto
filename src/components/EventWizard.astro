@@ -92,29 +92,11 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Data *</span>
-            <div class="wiz__data-grupo" data-data-grupo>
-              <select data-data-dia required aria-label="Dia">
-                <option value="" disabled selected>Dia</option>
-              </select>
-              <select data-data-mes required aria-label="Mês">
-                <option value="" disabled selected>Mês</option>
-                <option value="1">Jan</option>
-                <option value="2">Fev</option>
-                <option value="3">Mar</option>
-                <option value="4">Abr</option>
-                <option value="5">Mai</option>
-                <option value="6">Jun</option>
-                <option value="7">Jul</option>
-                <option value="8">Ago</option>
-                <option value="9">Set</option>
-                <option value="10">Out</option>
-                <option value="11">Nov</option>
-                <option value="12">Dez</option>
-              </select>
-              <select data-data-ano required aria-label="Ano">
-                <option value="" disabled selected>Ano</option>
-              </select>
-            </div>
+            <!-- Campo digitável (DD/MM/AAAA) em vez de <input type="date"> ou seletores: no
+                 celular os 3 <select> (Dia/Mês/Ano) ficavam apertados demais e confundiam a
+                 validação. Digitando com barra automática fica simples em qualquer aparelho,
+                 com teclado numérico (inputmode="numeric") e validação 100% nossa. -->
+            <input type="text" inputmode="numeric" data-data-display required placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" />
             <input type="hidden" name="data_evento" data-data-evento />
             <small class="wiz__field-aviso" data-data-aviso hidden></small>
           </label>
@@ -460,69 +442,57 @@ import { contact, supabaseConfig } from "../data/media";
   // ---------- ETAPA 3 ----------
   const formEvento = wizRoot.querySelector("[data-form-evento]");
 
-  // ---------- Data do evento: 3 seletores (Dia/Mês/Ano), em vez de <input type="date"> ----------
-  // O campo nativo de data deu dor de cabeça demais: alguns navegadores (Safari, principalmente)
-  // marcam "Valor inválido" (badInput) por um bug interno de parsing mesmo com dia/mês/ano
-  // certinhos digitados, e isso trava quem está preenchendo sem nenhum aviso claro. Com 3
-  // seletores simples, quem valida a data somos nós -- sem depender do parsing nativo de ninguém.
+  // ---------- Data do evento: campo digitável DD/MM/AAAA ----------
+  // Já passou por <input type="date"> (Safari travava com "Valor inválido" por um bug de
+  // parsing interno) e por 3 <select> de Dia/Mês/Ano (apertados demais no celular e confusos
+  // de preencher). Digitando um texto simples com barra automática, a validação é 100% nossa:
+  // sem depender de parsing nativo de data nem de três controles pra coordenar.
   (function () {
-    const selDia = formEvento.querySelector("[data-data-dia]");
-    const selMes = formEvento.querySelector("[data-data-mes]");
-    const selAno = formEvento.querySelector("[data-data-ano]");
+    const display = formEvento.querySelector("[data-data-display]");
     const hidden = formEvento.querySelector("[data-data-evento]");
-    const aviso = formEvento.querySelector("[data-data-aviso]");
-    if (!selDia || !selMes || !selAno || !hidden) return;
+    if (!display || !hidden) return;
 
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    for (let a = anoAtual; a <= anoAtual + 2; a++) {
-      const opt = document.createElement("option");
-      opt.value = String(a);
-      opt.textContent = String(a);
-      selAno.appendChild(opt);
+    function formatar(v) {
+      const digitos = v.replace(/\D/g, "").slice(0, 8);
+      if (digitos.length > 4) return digitos.slice(0, 2) + "/" + digitos.slice(2, 4) + "/" + digitos.slice(4);
+      if (digitos.length > 2) return digitos.slice(0, 2) + "/" + digitos.slice(2);
+      return digitos;
     }
 
-    function diasNoMes(mes, ano) {
-      if (!mes || !ano) return 31;
-      return new Date(Number(ano), Number(mes), 0).getDate();
-    }
-
-    function popularDias() {
-      const diaAtual = selDia.value;
-      const total = diasNoMes(selMes.value, selAno.value);
-      selDia.querySelectorAll("option:not([value='' ])").forEach((o) => o.remove());
-      for (let d = 1; d <= total; d++) {
-        const opt = document.createElement("option");
-        opt.value = String(d);
-        opt.textContent = String(d);
-        selDia.appendChild(opt);
-      }
-      // mantém o dia já escolhido se ainda existir no mês novo (ex.: trocou de 31 dias pra 30)
-      if (diaAtual && Number(diaAtual) <= total) selDia.value = diaAtual;
-      else if (diaAtual) selDia.value = "";
-    }
-    popularDias();
-
-    function atualizar() {
-      popularDias();
-      const dia = selDia.value, mes = selMes.value, ano = selAno.value;
-      aviso.hidden = true;
-      selDia.setCustomValidity("");
-      if (!dia || !mes || !ano) {
-        hidden.value = "";
+    function validar() {
+      const v = display.value.trim();
+      display.setCustomValidity("");
+      hidden.value = "";
+      if (!v) return; // campo vazio: deixa o "required" nativo cuidar da mensagem
+      const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!m) {
+        display.setCustomValidity("Digite a data completa no formato DD/MM/AAAA.");
         return;
       }
-      const iso = ano + "-" + mes.padStart(2, "0") + "-" + dia.padStart(2, "0");
-      const escolhida = new Date(Number(ano), Number(mes) - 1, Number(dia));
+      const dia = Number(m[1]), mes = Number(m[2]), ano = Number(m[3]);
+      const d = new Date(ano, mes - 1, dia);
+      // new Date() "estoura" datas inválidas (ex.: 31/02) pro mês seguinte em vez de dar erro --
+      // conferindo se dia/mês/ano voltaram iguais ao que foi digitado, pegamos esse caso.
+      if (d.getFullYear() !== ano || d.getMonth() !== mes - 1 || d.getDate() !== dia) {
+        display.setCustomValidity("Essa data não existe. Confira o dia e o mês.");
+        return;
+      }
+      const hoje = new Date();
       const hojeLocal = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-      if (escolhida < hojeLocal) {
-        selDia.setCustomValidity("A data não pode ser no passado.");
-        hidden.value = "";
+      if (d < hojeLocal) {
+        display.setCustomValidity("A data não pode ser no passado.");
         return;
       }
-      hidden.value = iso;
+      hidden.value = ano + "-" + String(mes).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
     }
-    [selDia, selMes, selAno].forEach((s) => s.addEventListener("change", atualizar));
+
+    display.addEventListener("input", function () {
+      const noFim = display.selectionStart === display.value.length;
+      display.value = formatar(display.value);
+      if (noFim) { const len = display.value.length; display.setSelectionRange(len, len); }
+      validar();
+    });
+    display.addEventListener("blur", validar);
   })();
 
   // Sugestão de cidade ao digitar, usando a base pública e gratuita do IBGE (sem chave/API key).
@@ -994,9 +964,6 @@ import { contact, supabaseConfig } from "../data/media";
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23f2d7ad' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.2rem;
 }
-/* Grupo Dia/Mês/Ano que substitui o <input type="date"> nativo (ver comentário no script). */
-.wiz__data-grupo { display: flex; gap: .5rem; }
-.wiz__data-grupo select { flex: 1 1 0; min-width: 0; padding-right: 1.8rem; }
 .wiz__radios { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: .85rem; color: var(--cream); }
 .wiz__radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
 
