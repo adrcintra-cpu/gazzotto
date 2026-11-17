@@ -77,6 +77,7 @@ import { supabaseConfig } from "../data/media";
       <nav class="admin__tabs" aria-label="Seções do painel">
         <button type="button" class="admin__tab is-active" data-tab="leads">Leads</button>
         <button type="button" class="admin__tab" data-tab="notificacoes">Notificações WhatsApp</button>
+        <button type="button" class="admin__tab" data-tab="contato-formulario">Contato Formulário</button>
         <button type="button" class="admin__tab" data-tab="colaboradores">Colaboradores</button>
       </nav>
 
@@ -118,6 +119,25 @@ import { supabaseConfig } from "../data/media";
             <thead><tr><th>Nome</th><th>Telefone</th><th>Ativo</th><th></th></tr></thead>
             <tbody data-contatos-body>
               <tr><td colspan="4" class="admin__loading">Carregando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin__view" data-tab-panel="contato-formulario" hidden>
+        <div class="admin__toolbar">
+          <h2>Mensagens do formulário de contato</h2>
+          <button type="button" class="admin__btn-ghost" data-reload-contato-formulario>Atualizar</button>
+        </div>
+        <p class="admin__hint">
+          Mensagens enviadas pelo formulário "Contate-nos" do site (além de abrir o WhatsApp/e-mail,
+          elas ficam registradas aqui).
+        </p>
+        <div class="admin__table-wrap">
+          <table class="admin__table" data-contato-formulario-table>
+            <thead><tr><th>Nome</th><th>Contato</th><th>Mensagem</th><th>Recebido em</th><th></th></tr></thead>
+            <tbody data-contato-formulario-body>
+              <tr><td colspan="5" class="admin__loading">Carregando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -239,6 +259,7 @@ import { supabaseConfig } from "../data/media";
       carregado = true;
       carregarLeads();
       carregarContatos();
+      carregarContatoFormulario();
       carregarColaboradores();
     }
   }
@@ -655,6 +676,49 @@ import { supabaseConfig } from "../data/media";
     form.reset();
     carregarContatos();
   });
+
+  // ---------- Contato Formulário (formulário "Contate-nos" do site, não é o Monte seu Evento) ----------
+  // Vem de um formulário público (sem login) -- mesma cautela de sempre: escapar texto livre
+  // antes de jogar em innerHTML.
+  async function carregarContatoFormulario() {
+    const body = root.querySelector("[data-contato-formulario-body]");
+    body.innerHTML = '<tr><td colspan="5" class="admin__loading">Carregando…</td></tr>';
+    const { data, error } = await supabase
+      .from("contatos_formulario")
+      .select("id, nome, email, telefone, mensagem, created_at")
+      .order("created_at", { ascending: false });
+    if (error) {
+      body.innerHTML = '<tr><td colspan="5" class="admin__erro-cel">Erro ao carregar: ' + esc(error.message) + "</td></tr>";
+      return;
+    }
+    if (!data.length) {
+      body.innerHTML = '<tr><td colspan="5" class="admin__loading">Nenhuma mensagem recebida ainda.</td></tr>';
+      return;
+    }
+    body.innerHTML = data.map((c) => {
+      const mensagem = c.mensagem || "";
+      const resumo = mensagem.length > 80 ? mensagem.slice(0, 80) + "…" : mensagem;
+      return `
+      <tr>
+        <td>${esc(c.nome)}</td>
+        <td>${[esc(c.email), esc(c.telefone)].filter(Boolean).join(" · ")}</td>
+        <td title="${esc(mensagem)}">${esc(resumo) || "-"}</td>
+        <td>${new Date(c.created_at).toLocaleString("pt-BR")}</td>
+        <td><button type="button" class="admin__btn-ghost admin__btn-small" data-excluir-contato-formulario="${c.id}">Excluir</button></td>
+      </tr>
+    `;
+    }).join("");
+
+    body.querySelectorAll("[data-excluir-contato-formulario]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.excluirContatoFormulario;
+        if (!confirm("Excluir esta mensagem definitivamente?")) return;
+        await supabase.from("contatos_formulario").delete().eq("id", id);
+        carregarContatoFormulario();
+      });
+    });
+  }
+  root.querySelector("[data-reload-contato-formulario]").addEventListener("click", carregarContatoFormulario);
 
   // ---------- Convidar colaborador ----------
   const conviteMsg = root.querySelector("[data-convite-msg]");

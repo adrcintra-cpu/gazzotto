@@ -8,7 +8,7 @@ import ScrubVideo from "../components/ScrubVideo.astro";
 import MomentsGallery from "../components/MomentsGallery.astro";
 import Parallax from "../components/Parallax.astro";
 import TextScrub from "../components/TextScrub.astro";
-import { media, contact, cld, cldPoster } from "../data/media";
+import { media, contact, cld, cldPoster, supabaseConfig } from "../data/media";
 
 const cta = contact.whatsapp
   ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Olá! Quero um orçamento com a Gazzotto BBQ.")}`
@@ -307,16 +307,28 @@ const socials = [
   <Parallax />
   <TextScrub />
 
-  <script is:inline>
-    // Formulário sem back-end: abre WhatsApp (se configurado) ou e-mail com a mensagem pronta.
-    // Troque por Formspree/Resend/endpoint próprio quando houver.
-    document.getElementById("form").addEventListener("submit", function (e) {
-      var f = e.currentTarget, d = new FormData(f);
-      var txt = "Olá! Meu nome é " + d.get("nome") +
-        ".\nE-mail: " + d.get("email") + "\nTelefone: " + d.get("telefone") + "\n\n" + d.get("mensagem");
-      var wa = f.dataset.wa, mail = f.dataset.mail;
-      if (!wa && !mail) return e.preventDefault();
+  <script type="module" define:vars={{ SUPABASE_URL: supabaseConfig.url, SUPABASE_KEY: supabaseConfig.publishableKey }}>
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Abre WhatsApp (se configurado) ou e-mail com a mensagem pronta, e também registra o
+    // contato no painel admin (aba "Contato Formulário") -- se o salvamento falhar (sem
+    // internet, etc.), ainda assim segue pro WhatsApp/e-mail, pra não travar quem está mandando.
+    document.getElementById("form").addEventListener("submit", async function (e) {
       e.preventDefault();
+      var f = e.currentTarget, d = new FormData(f);
+      var nome = d.get("nome"), email = d.get("email"), telefone = d.get("telefone"), mensagem = d.get("mensagem");
+      var txt = "Olá! Meu nome é " + nome +
+        ".\nE-mail: " + email + "\nTelefone: " + telefone + "\n\n" + mensagem;
+      var wa = f.dataset.wa, mail = f.dataset.mail;
+
+      try {
+        await supabase.from("contatos_formulario").insert({ nome, email, telefone, mensagem });
+      } catch (err) {
+        // segue mesmo assim -- ver comentário acima.
+      }
+
+      if (!wa && !mail) return;
       location.href = wa
         ? "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt)
         : "mailto:" + mail + "?subject=" + encodeURIComponent("Orçamento — site") + "&body=" + encodeURIComponent(txt);
