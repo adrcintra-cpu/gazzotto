@@ -740,7 +740,20 @@ import { contact, supabaseConfig } from "../data/media";
     const container = campo.closest(".wiz__field") || campo.closest("fieldset");
     if (container) {
       container.classList.add("wiz__field--erro");
-      setTimeout(() => container.classList.remove("wiz__field--erro"), 3000);
+      // Mostra o motivo exato que o navegador deu (ex.: "Preencha este campo" ou "Selecione um
+      // valor maior ou igual a ..."), em vez de só a borda -- fica óbvio o porquê, inclusive pra
+      // quem for diagnosticar depois caso aconteça de novo.
+      let aviso = container.querySelector(".wiz__field-aviso");
+      if (!aviso) {
+        aviso = document.createElement("small");
+        aviso.className = "wiz__field-aviso";
+        container.appendChild(aviso);
+      }
+      aviso.textContent = campo.validationMessage;
+      setTimeout(() => {
+        container.classList.remove("wiz__field--erro");
+        aviso.remove();
+      }, 4000);
     }
     campo.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -876,6 +889,7 @@ import { contact, supabaseConfig } from "../data/media";
 /* Destaque temporário quando o campo fica obrigatório e sem preencher (ver destacarCampoInvalido). */
 .wiz__field--erro { outline: 2px solid var(--burger); outline-offset: 6px; border-radius: 8px; animation: wiz-shake .35s; }
 .wiz__field--erro > span:first-child { color: var(--burger); }
+.wiz__field-aviso { color: var(--burger); font-size: .72rem; margin-top: -.15rem; }
 @keyframes wiz-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .wiz__field input, .wiz__field select, .wiz__field textarea {
   padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
