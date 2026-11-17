@@ -64,7 +64,7 @@ import { contact, supabaseConfig } from "../data/media";
     <!-- ETAPA 3 — Informações do evento -->
     <div class="wiz__panel" data-panel="3" hidden>
       <h3 class="wiz__panel-title">Informações do evento</h3>
-      <form class="wiz__form" data-form-evento novalidate>
+      <form class="wiz__form" data-form-evento novalidate autocomplete="off">
         <fieldset class="wiz__fgroup">
           <legend>Responsável</legend>
           <label class="wiz__field">
@@ -106,15 +106,17 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Endereço ou local</span>
-            <!-- autocomplete="off" em vez de "new-password": esse valor evitava o ícone de
-                 autofill de endereço do navegador, mas no iPhone faz o Safari tratar o campo
-                 como senha e consultar o Keychain ao focar, o que pode abrir uma tela de Face
-                 ID/Touch ID -- sensação de "travar" bem na hora de descer até este campo. -->
-            <input type="text" name="endereco" autocomplete="off" data-lpignore="true" />
+            <!-- autocomplete="off" sozinho não bastou: o Safari no iPhone ainda reconhecia o
+                 campo como endereço (pelo nome/rótulo) e tentava autofill/sugestão de
+                 localização atual ao focar, travando a tela por um instante. "nope" é um valor
+                 não padrão que navegadores tratam como "sem autocomplete" só que, na prática,
+                 evita esse reconhecimento especial que o "off" sozinho não evitava -- junto com
+                 um name que não parece campo de endereço pro navegador. -->
+            <input type="text" name="local_do_evento" autocomplete="nope" data-lpignore="true" data-1p-ignore="true" />
           </label>
           <label class="wiz__field">
             <span>Cidade *</span>
-            <input type="text" name="cidade" required autocomplete="off" data-lpignore="true" list="wiz-cidades" />
+            <input type="text" name="municipio_evento" required autocomplete="nope" data-lpignore="true" data-1p-ignore="true" list="wiz-cidades" />
             <datalist id="wiz-cidades"></datalist>
           </label>
         </fieldset>
@@ -500,7 +502,7 @@ import { contact, supabaseConfig } from "../data/media";
   // O autocomplete="off" no input evita o autofill de endereço do próprio navegador (ícone de
   // "preencher endereço salvo"), que conflitava com esta sugestão própria.
   (function () {
-    const inputCidade = formEvento.querySelector('[name="cidade"]');
+    const inputCidade = formEvento.querySelector('[name="municipio_evento"]');
     const datalist = document.getElementById("wiz-cidades");
     if (!inputCidade || !datalist) return;
     inputCidade.addEventListener("focus", function carregarCidades() {
@@ -590,8 +592,8 @@ import { contact, supabaseConfig } from "../data/media";
       tipo_evento: (d.get("tipo_evento") || "").toString(),
       data_evento: (d.get("data_evento") || "").toString(),
       horario_inicio: (d.get("horario_inicio") || "").toString(),
-      endereco: (d.get("endereco") || "").toString().trim(),
-      cidade: (d.get("cidade") || "").toString().trim(),
+      endereco: (d.get("local_do_evento") || "").toString().trim(),
+      cidade: (d.get("municipio_evento") || "").toString().trim(),
       qtd_adultos: Number(d.get("qtd_adultos") || 0),
       qtd_criancas: Number(d.get("qtd_criancas") || 0),
       qtd_equipe_apoio: Number(d.get("qtd_equipe_apoio") || 0),
