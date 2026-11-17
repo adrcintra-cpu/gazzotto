@@ -354,48 +354,6 @@ body::before, .story::before, .moments::before, .footer::before, .footer__bottom
 .menu__front h3 { font-size: 1.9rem; line-height: 1.1; letter-spacing: .02em; }
 .menu__back h3 { font-size: 1.5rem; line-height: 1.1; letter-spacing: .02em; }
 
-/* WhatsApp flutuante */
-/* touch-action:manipulation -- em alguns celulares (principalmente iPhone), um botão redondo
-   fixo no canto da tela, isolado do resto do conteúdo, pode ter o primeiro toque "engolido"
-   pelo gesto nativo de dar zoom com duplo toque: o navegador espera pra ver se vem um segundo
-   toque antes de decidir se foi um clique, e nesse meio tempo pode não disparar nada visível --
-   essa é a causa mais comum relatada como "toco e não acontece nada" nesse tipo de botão.
-   touch-action:manipulation desliga esse gesto de zoom só neste elemento e faz o toque valer
-   na hora. tap-highlight-color:transparent só tira o flash cinza padrão do toque, cosmético. */
-/* transform:translateZ(0) força o Safari a tratar o botão como sua própria camada (GPU) --
-   em alguns iPhones (não todos: varia por modelo/versão do iOS), um elemento "fixed" no canto
-   da tela pode ficar com a área de toque dessincronizada da posição visual depois que a página
-   rola ou a barra de endereço do Safari recolhe/expande, fazendo o toque "não acontecer" mesmo
-   com o botão aparecendo certinho no lugar certo. */
-/* z-index:100 -- mais alto que qualquer outro elemento do site (o aviso de cookies, por
-   exemplo, usa 60), pra garantir que o botão do WhatsApp sempre fique por cima de tudo. */
-.wa-float { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 100; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; padding: 0; border-radius: 50%; background: #25d366; color: #fff; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / .35); transition: transform .2s, box-shadow .2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.wa-float:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 12px 30px rgb(0 0 0 / .45); }
-.wa-float svg { flex: none; }
-.wa-float__tip { position: absolute; right: calc(100% + .7rem); top: 50%; transform: translateY(-50%); padding: .45rem .8rem; border-radius: 999px; background: rgb(20 21 24 / .92); color: var(--fish); font: 600 .85rem var(--font-body); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; }
-.wa-float:hover .wa-float__tip, .wa-float:focus-visible .wa-float__tip { opacity: 1; }
-.wa-float::before { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0 rgb(37 211 102 / .55); animation: wa-pulse 2.4s infinite; pointer-events: none; }
-@keyframes wa-pulse { 70% { box-shadow: 0 0 0 16px rgb(37 211 102 / 0); } 100% { box-shadow: 0 0 0 0 rgb(37 211 102 / 0); } }
-@media (prefers-reduced-motion: reduce) { .wa-float::before { animation: none; } .wa-float { transition: none; } }
-@media (max-width: 520px) { .wa-float { right: .9rem; bottom: .9rem; } }
-/* Enquanto o aviso de cookies está na tela, ele ficava por cima do botão do WhatsApp (mesmo
-   canto) -- em alguns celulares o toque acabava caindo no link "Política de Privacidade" do
-   aviso em vez de abrir o WhatsApp. Uma versão anterior escondia o botão (opacity:0 +
-   pointer-events:none) até a pessoa responder o aviso -- só que quem não clicava logo em
-   "Aceitar"/"Recusar" ficava com o botão invisível e sem reagir ao toque.
-   Depois tentamos medir a altura real do aviso por JS (--cookie-banner-h) pra subir o botão só
-   o necessário -- só que isso depende de um cálculo assíncrono (requestAnimationFrame) que pode
-   não terminar a tempo em alguns aparelhos/conexões mais lentas, ou ficar desatualizado se o
-   texto quebrar linha de um jeito diferente depois da medição (fonte carregando, etc.) --
-   resultando no botão ainda ficando atrás do aviso em alguns celulares, sem erro nenhum visível.
-   Agora é um valor fixo e generoso (sem depender de medir nada): sempre alto o suficiente pra
-   cobrir o aviso no pior caso (texto em 2-3 linhas + botões empilhados no mobile), então pode
-   sobrar um espacinho vazio embaixo do botão às vezes, mas ele nunca fica embaixo do aviso. */
-body.tem-cookie-consent .wa-float { bottom: 9rem; }
-@media (max-width: 520px) {
-  body.tem-cookie-consent .wa-float { bottom: 12rem; }
-}
-
 /* Cards de vantagens (abaixo do banner): efeitos de hover */
 .perk { overflow: hidden; cursor: default; transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .3s, box-shadow .35s, background-color .35s; }
 .perk::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--burger); transform: scaleX(0); transform-origin: left; transition: transform .45s cubic-bezier(.2, .7, .2, 1); pointer-events: none; }
