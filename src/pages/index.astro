@@ -62,7 +62,7 @@ const socials = [
       <nav class="nav" id="nav" aria-label="Principal">
         <a href="#topo">Início</a><a href="#monte-seu-evento">Monte seu Evento</a><a href="#eventos">Eventos</a><a href="#cardapios">Cardápio</a><a href="#diferenciais">Diferenciais</a><a href="#contato">Contato</a>
       </nav>
-      <a class="btn header__cta" href={cta}>Quero um orçamento</a>
+      <a class="btn header__cta" href={cta} target={contact.whatsapp ? "_blank" : undefined} rel={contact.whatsapp ? "noopener" : undefined}>Quero um orçamento</a>
       <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menu"><span></span><span></span><span></span></button>
     </div>
   </header>
@@ -96,7 +96,7 @@ const socials = [
           <p data-scrub>A Gazzotto BBQ leva estrutura, preparo e atendimento para transformar seu encontro em uma experiência gastronômica completa. Atendemos:</p>
           <ul>{eventos.map((e) => <li>{e}</li>)}</ul>
           <p data-scrub>Cada serviço é planejado para entregar praticidade, sabor e uma experiência diferenciada para seus convidados.</p>
-          <a class="btn" style="margin-top:1.2rem" href={cta}>Quero um orçamento</a>
+          <a class="btn" style="margin-top:1.2rem" href={cta} target={contact.whatsapp ? "_blank" : undefined} rel={contact.whatsapp ? "noopener" : undefined}>Quero um orçamento</a>
         </div>
       </div>
     </section>
