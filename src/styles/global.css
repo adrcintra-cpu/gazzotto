@@ -364,10 +364,20 @@ body::before, .story::before, .moments::before, .footer::before, .footer__bottom
 @keyframes wa-pulse { 70% { box-shadow: 0 0 0 16px rgb(37 211 102 / 0); } 100% { box-shadow: 0 0 0 0 rgb(37 211 102 / 0); } }
 @media (prefers-reduced-motion: reduce) { .wa-float::before { animation: none; } .wa-float { transition: none; } }
 @media (max-width: 520px) { .wa-float { right: .9rem; bottom: .9rem; } }
-/* Enquanto o aviso de cookies está na tela, ele fica por cima do botão do WhatsApp (mesmo
-   canto, z-index maior) -- em alguns celulares o toque acabava caindo no link "Política de
-   Privacidade" do aviso em vez de abrir o WhatsApp. Escondemos o botão até o aviso sumir. */
-body.tem-cookie-consent .wa-float { opacity: 0; pointer-events: none; transition: opacity .2s; }
+/* Enquanto o aviso de cookies está na tela, ele ficava por cima do botão do WhatsApp (mesmo
+   canto) -- em alguns celulares o toque acabava caindo no link "Política de Privacidade" do
+   aviso em vez de abrir o WhatsApp. A solução antiga escondia o botão (opacity:0 +
+   pointer-events:none) até a pessoa responder o aviso -- só que quem não clica logo em
+   "Aceitar"/"Recusar" ficava com o botão invisível e sem reagir ao toque, parecendo "quebrado".
+   Agora, em vez de esconder, subimos o botão para cima do aviso: a altura real do aviso (varia
+   com o tamanho da tela/texto) é medida em CookieConsent.astro e fica em --cookie-banner-h. */
+body.tem-cookie-consent .wa-float {
+  bottom: calc(1.2rem + var(--cookie-banner-h, 0px) + .6rem);
+  transition: bottom .2s, transform .2s, box-shadow .2s;
+}
+@media (max-width: 520px) {
+  body.tem-cookie-consent .wa-float { bottom: calc(.9rem + var(--cookie-banner-h, 0px) + .6rem); }
+}
 
 /* Cards de vantagens (abaixo do banner): efeitos de hover */
 .perk { overflow: hidden; cursor: default; transition: transform .35s cubic-bezier(.2, .7, .2, 1), border-color .3s, box-shadow .35s, background-color .35s; }

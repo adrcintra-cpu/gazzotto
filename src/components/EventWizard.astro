@@ -994,8 +994,25 @@ import { contact, supabaseConfig } from "../data/media";
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23f2d7ad' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2.2rem;
 }
-.wiz__radios { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: .85rem; color: var(--cream); }
-.wiz__radios label { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
+.wiz__radios { display: flex; flex-wrap: wrap; gap: .9rem; font-size: .95rem; color: var(--cream); }
+.wiz__radios label {
+  display: flex; align-items: center; gap: .6rem; cursor: pointer;
+  padding: .55rem 1rem; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--fish) 25%, transparent);
+  transition: border-color .2s, background-color .2s, color .2s;
+}
+/* Pedido do usuário: dar mais destaque e deixar o Radio Button um pouco maior (antes usava o
+   tamanho padrão minúsculo do navegador). O círculo cresce e a opção marcada ganha uma
+   "pílula" destacada na cor da marca, deixando bem claro qual está selecionada. */
+.wiz__radios input[type="radio"] {
+  width: 1.3rem; height: 1.3rem; accent-color: var(--chicken); cursor: pointer; flex: none;
+}
+.wiz__radios label:has(input:checked) {
+  border-color: var(--chicken);
+  background: color-mix(in srgb, var(--chicken) 16%, transparent);
+  color: var(--chicken);
+  font-weight: 600;
+}
 
 /* Switch (toggle) usado em "Deseja contratar buffet?" e "Equipe de apoio" */
 .wiz__switch { display: inline-flex; align-items: center; gap: .7rem; cursor: pointer; margin-top: .2rem; }
