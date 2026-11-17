@@ -367,7 +367,9 @@ body::before, .story::before, .moments::before, .footer::before, .footer__bottom
    da tela pode ficar com a área de toque dessincronizada da posição visual depois que a página
    rola ou a barra de endereço do Safari recolhe/expande, fazendo o toque "não acontecer" mesmo
    com o botão aparecendo certinho no lugar certo. */
-.wa-float { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 30; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; padding: 0; border-radius: 50%; background: #25d366; color: #fff; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / .35); transition: transform .2s, box-shadow .2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+/* z-index:100 -- mais alto que qualquer outro elemento do site (o aviso de cookies, por
+   exemplo, usa 60), pra garantir que o botão do WhatsApp sempre fique por cima de tudo. */
+.wa-float { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 100; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; padding: 0; border-radius: 50%; background: #25d366; color: #fff; text-decoration: none; box-shadow: 0 8px 24px rgb(0 0 0 / .35); transition: transform .2s, box-shadow .2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .wa-float:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 12px 30px rgb(0 0 0 / .45); }
 .wa-float svg { flex: none; }
 .wa-float__tip { position: absolute; right: calc(100% + .7rem); top: 50%; transform: translateY(-50%); padding: .45rem .8rem; border-radius: 999px; background: rgb(20 21 24 / .92); color: var(--fish); font: 600 .85rem var(--font-body); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .2s; }
