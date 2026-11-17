@@ -452,6 +452,14 @@ import { supabaseConfig } from "../data/media";
     return `<div class="admin__lead-linha"><strong>${label}</strong><span>${valor}</span></div>`;
   }
 
+  // O campo WhatsApp do formulário é texto livre (sem máscara), então o cliente pode digitar
+  // com parênteses, espaço, traço etc. O wa.me só funciona com dígitos + código do país (55).
+  function linkWhatsapp(numero) {
+    let digitos = String(numero || "").replace(/\D/g, "");
+    if (digitos && !digitos.startsWith("55")) digitos = "55" + digitos;
+    return digitos;
+  }
+
   function itensDoPacote(pacote) {
     if (!pacote?.pacote_regras) return [];
     return pacote.pacote_regras.flatMap((r) => (r.pacote_regra_itens || []).map((ri) => ri.itens?.nome)).filter(Boolean);
@@ -485,7 +493,7 @@ import { supabaseConfig } from "../data/media";
 
     html += '<section class="admin__lead-secao"><h4>Responsável</h4>';
     html += linha("Nome", esc(o.nome_responsavel));
-    html += linha("WhatsApp", `<a href="https://wa.me/${esc(o.whatsapp)}" target="_blank" rel="noopener">${esc(o.whatsapp)}</a>`);
+    html += linha("WhatsApp", `<a href="https://wa.me/${linkWhatsapp(o.whatsapp)}" target="_blank" rel="noopener">${esc(o.whatsapp)}</a>`);
     html += "</section>";
 
     html += '<section class="admin__lead-secao"><h4>Evento</h4>';
