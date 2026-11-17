@@ -498,31 +498,42 @@ import { contact, supabaseConfig } from "../data/media";
   })();
 
   // Sugestão de cidade ao digitar, usando a base pública e gratuita do IBGE (sem chave/API key).
-  // Carrega só quando o campo recebe foco pela primeira vez, pra não pesar o carregamento da página.
-  // O autocomplete="off" no input evita o autofill de endereço do próprio navegador (ícone de
-  // "preencher endereço salvo"), que conflitava com esta sugestão própria.
   (function () {
     const inputCidade = formEvento.querySelector('[name="municipio_evento"]');
     const datalist = document.getElementById("wiz-cidades");
     if (!inputCidade || !datalist) return;
-    inputCidade.addEventListener("focus", function carregarCidades() {
-      inputCidade.removeEventListener("focus", carregarCidades);
+
+    function esc(s) {
+      return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function carregarCidades() {
       fetch("https://servicodados.ibge.gov.br/api/v1/localidades/municipios")
         .then((r) => r.json())
         .then((lista) => {
-          const frag = document.createDocumentFragment();
-          lista.forEach((m) => {
+          // Antes isso criava ~5.570 elementos <option> um por um (createElement + appendChild)
+          // bem na hora em que o campo Cidade recebia foco -- travava a tela por um instante em
+          // celulares mais simples, logo depois de preencher o Endereço. Montar tudo como uma
+          // única string HTML e inserir de uma vez só é muito mais rápido (um parse só).
+          let html = "";
+          for (let i = 0; i < lista.length; i++) {
+            const m = lista[i];
             const uf = m?.microrregiao?.mesorregiao?.UF?.sigla;
-            const opt = document.createElement("option");
-            opt.value = uf ? `${m.nome} - ${uf}` : m.nome;
-            frag.appendChild(opt);
-          });
-          datalist.appendChild(frag);
+            const nome = uf ? `${m.nome} - ${uf}` : m.nome;
+            html += '<option value="' + esc(nome) + '"></option>';
+          }
+          datalist.innerHTML = html;
         })
         .catch(() => {
           // IBGE fora do ar ou sem internet: o campo continua funcionando normalmente, só sem sugestão.
         });
-    }, { once: true });
+    }
+
+    // Carrega em segundo plano assim que o navegador estiver ocioso, bem antes do usuário
+    // chegar nesse campo -- em vez de esperar o foco, que jogava o trabalho pesado (download +
+    // montagem da lista) bem no momento em que a pessoa está preenchendo o formulário.
+    if ("requestIdleCallback" in window) requestIdleCallback(carregarCidades, { timeout: 4000 });
+    else setTimeout(carregarCidades, 1200);
   })();
 
   // ---------- Equipe de apoio: switch liga/desliga + quantidade ----------
