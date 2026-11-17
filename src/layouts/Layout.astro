@@ -106,6 +106,21 @@ const jsonLd = {
         }
         document.addEventListener("focusin", function (e) { if (ehCampo(e.target)) waFloat.classList.add("wa-float--oculto"); });
         document.addEventListener("focusout", function (e) { if (ehCampo(e.target)) waFloat.classList.remove("wa-float--oculto"); });
+
+        // O botão "Continuar" do configurador "Monte seu Evento" também fica no canto
+        // inferior direito, bem perto de onde o botão do WhatsApp flutua -- em telas de
+        // celular os dois acabam vizinhos (às vezes quase encostando), e um toque mirado no
+        // "Continuar" pode acabar pegando o botão do WhatsApp em vez de avançar a etapa. Por
+        // isso o botão do WhatsApp some por completo sempre que a seção do configurador está
+        // visível na tela, voltando só quando a pessoa rola pra longe dela.
+        var wizSection = document.getElementById("monte-seu-evento");
+        if (wizSection && "IntersectionObserver" in window) {
+          new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              waFloat.classList.toggle("wa-float--oculto-wiz", entry.isIntersecting);
+            });
+          }, { threshold: 0 }).observe(wizSection);
+        }
       })();
     </script>
     <CookieConsent />
