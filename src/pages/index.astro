@@ -186,6 +186,7 @@ const socials = [
           <label class="sr full" for="f-msg">Mensagem</label>
           <textarea class="full" id="f-msg" name="mensagem" placeholder="Mensagem"></textarea>
           <button class="btn btn--red send" type="submit">Enviar</button>
+          <p class="form__msg full" data-form-msg hidden></p>
         </form>
       </div>
     </section>
@@ -311,27 +312,35 @@ const socials = [
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Abre WhatsApp (se configurado) ou e-mail com a mensagem pronta, e também registra o
-    // contato no painel admin (aba "Contato Formulário") -- se o salvamento falhar (sem
-    // internet, etc.), ainda assim segue pro WhatsApp/e-mail, pra não travar quem está mandando.
+    // Salva o contato no painel admin (aba "Contato Formulário") e mostra uma confirmação na
+    // própria página -- não abre mais o WhatsApp/e-mail automaticamente (antes abria; mudou a
+    // pedido, agora que a mensagem fica registrada no painel).
     document.getElementById("form").addEventListener("submit", async function (e) {
       e.preventDefault();
       var f = e.currentTarget, d = new FormData(f);
       var nome = d.get("nome"), email = d.get("email"), telefone = d.get("telefone"), mensagem = d.get("mensagem");
-      var txt = "Olá! Meu nome é " + nome +
-        ".\nE-mail: " + email + "\nTelefone: " + telefone + "\n\n" + mensagem;
-      var wa = f.dataset.wa, mail = f.dataset.mail;
+      var msg = f.querySelector("[data-form-msg]");
+      var btn = f.querySelector(".send");
 
+      btn.disabled = true;
+      var deuErro = false;
       try {
-        await supabase.from("contatos_formulario").insert({ nome, email, telefone, mensagem });
+        const { error } = await supabase.from("contatos_formulario").insert({ nome, email, telefone, mensagem });
+        if (error) deuErro = true;
       } catch (err) {
-        // segue mesmo assim -- ver comentário acima.
+        deuErro = true;
       }
+      btn.disabled = false;
 
-      if (!wa && !mail) return;
-      location.href = wa
-        ? "https://wa.me/" + wa + "?text=" + encodeURIComponent(txt)
-        : "mailto:" + mail + "?subject=" + encodeURIComponent("Orçamento — site") + "&body=" + encodeURIComponent(txt);
+      msg.hidden = false;
+      if (deuErro) {
+        msg.textContent = "Não foi possível enviar agora. Tente novamente em instantes ou fale direto pelo WhatsApp.";
+        msg.style.color = "var(--burger)";
+      } else {
+        msg.textContent = "Mensagem enviada! Em breve entraremos em contato.";
+        msg.style.color = "var(--chicken)";
+        f.reset();
+      }
     });
   </script>
 </Layout>
