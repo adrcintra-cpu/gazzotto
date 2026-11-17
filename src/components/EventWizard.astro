@@ -92,7 +92,7 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Data *</span>
-            <input type="date" name="data_evento" required data-data-evento />
+            <input type="date" name="data_evento" required data-data-evento autocomplete="off" />
           </label>
           <label class="wiz__field">
             <span>Horário de início</span>
@@ -720,6 +720,15 @@ import { contact, supabaseConfig } from "../data/media";
       if (!validarEtapa2()) { alert("Escolha ao menos uma opção para continuar."); return; }
       goToStep(3);
     } else if (currentStep === 3) {
+      // Alguns navegadores (principalmente Safari) deixam o campo de data marcado como
+      // "Valor inválido" (badInput) por um bug interno de parsing, mesmo com dia/mês/ano
+      // certinhos digitados -- reatribuir o próprio valor força reconferir e costuma resolver,
+      // sem efeito nenhum quando o campo já estava correto.
+      if (inputData && inputData.value) {
+        const v = inputData.value;
+        inputData.value = "";
+        inputData.value = v;
+      }
       if (!formEvento.reportValidity()) { destacarCampoInvalido(); return; }
       coletarEtapa3();
       goToStep(4);
