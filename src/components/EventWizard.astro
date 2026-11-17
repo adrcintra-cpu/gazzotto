@@ -102,7 +102,12 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Horário de início</span>
-            <input type="time" name="horario_inicio" />
+            <!-- Campo digitável (HH:MM) em vez de <input type="time">: no celular ele abria um
+                 modal/seletor de rolagem nativo por cima da tela -- mesmo motivo que levou a
+                 Data a virar campo digitável. Digitando com dois-pontos automático funciona
+                 igual em qualquer aparelho, sem nenhum modal por cima. -->
+            <input type="text" inputmode="numeric" data-hora-display placeholder="HH:MM" maxlength="5" autocomplete="off" />
+            <input type="hidden" name="horario_inicio" data-hora-valor />
           </label>
           <label class="wiz__field">
             <span>Endereço ou local</span>
@@ -489,6 +494,45 @@ import { contact, supabaseConfig } from "../data/media";
         return;
       }
       hidden.value = ano + "-" + String(mes).padStart(2, "0") + "-" + String(dia).padStart(2, "0");
+    }
+
+    display.addEventListener("input", function () {
+      const noFim = display.selectionStart === display.value.length;
+      display.value = formatar(display.value);
+      if (noFim) { const len = display.value.length; display.setSelectionRange(len, len); }
+      validar();
+    });
+    display.addEventListener("blur", validar);
+  })();
+
+  // ---------- Horário de início: campo digitável HH:MM ----------
+  (function () {
+    const display = formEvento.querySelector("[data-hora-display]");
+    const hidden = formEvento.querySelector("[data-hora-valor]");
+    if (!display || !hidden) return;
+
+    function formatar(v) {
+      const digitos = v.replace(/\D/g, "").slice(0, 4);
+      if (digitos.length > 2) return digitos.slice(0, 2) + ":" + digitos.slice(2);
+      return digitos;
+    }
+
+    function validar() {
+      const v = display.value.trim();
+      display.setCustomValidity("");
+      hidden.value = "";
+      if (!v) return; // campo opcional: vazio é válido
+      const m = v.match(/^(\d{2}):(\d{2})$/);
+      if (!m) {
+        display.setCustomValidity("Digite o horário completo no formato HH:MM.");
+        return;
+      }
+      const h = Number(m[1]), min = Number(m[2]);
+      if (h > 23 || min > 59) {
+        display.setCustomValidity("Esse horário não existe. Confira a hora e os minutos.");
+        return;
+      }
+      hidden.value = String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
     }
 
     display.addEventListener("input", function () {
