@@ -124,11 +124,15 @@ import { contact, supabaseConfig } from "../data/media";
           </label>
           <label class="wiz__field">
             <span>Endereço ou local</span>
-            <input type="text" name="endereco" autocomplete="new-password" data-lpignore="true" />
+            <!-- autocomplete="off" em vez de "new-password": esse valor evitava o ícone de
+                 autofill de endereço do navegador, mas no iPhone faz o Safari tratar o campo
+                 como senha e consultar o Keychain ao focar, o que pode abrir uma tela de Face
+                 ID/Touch ID -- sensação de "travar" bem na hora de descer até este campo. -->
+            <input type="text" name="endereco" autocomplete="off" data-lpignore="true" />
           </label>
           <label class="wiz__field">
             <span>Cidade *</span>
-            <input type="text" name="cidade" required autocomplete="new-password" data-lpignore="true" list="wiz-cidades" />
+            <input type="text" name="cidade" required autocomplete="off" data-lpignore="true" list="wiz-cidades" />
             <datalist id="wiz-cidades"></datalist>
           </label>
         </fieldset>
@@ -523,8 +527,8 @@ import { contact, supabaseConfig } from "../data/media";
 
   // Sugestão de cidade ao digitar, usando a base pública e gratuita do IBGE (sem chave/API key).
   // Carrega só quando o campo recebe foco pela primeira vez, pra não pesar o carregamento da página.
-  // O autocomplete="new-password" no input evita o autofill de endereço do próprio navegador
-  // (ícone de "preencher endereço salvo"), que conflitava com esta sugestão própria.
+  // O autocomplete="off" no input evita o autofill de endereço do próprio navegador (ícone de
+  // "preencher endereço salvo"), que conflitava com esta sugestão própria.
   (function () {
     const inputCidade = formEvento.querySelector('[name="cidade"]');
     const datalist = document.getElementById("wiz-cidades");
