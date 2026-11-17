@@ -977,6 +977,14 @@ import { contact, supabaseConfig } from "../data/media";
   padding: .6rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent);
   background: transparent; color: var(--cream); font: inherit; font-size: .85rem;
 }
+/* O campo Cidade usa list="wiz-cidades" para sugerir nomes enquanto a pessoa digita, mas isso
+   faz o Chrome desenhar uma setinha no canto do campo, como se fosse um <select> (campo de
+   escolha obrigatória) em vez de um campo de texto livre. Escondemos esse ícone nativo para o
+   campo continuar parecendo um input de texto comum; a digitação e as sugestões continuam
+   funcionando normalmente. */
+.wiz__field input[list]::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
 /* Sem appearance:none, o <select> mantém o estilo nativo do navegador por cima do padding
    acima, ficando com altura diferente dos <input> ao lado (campo "Tipo de evento" desalinhado
    da "Data"). Com appearance:none é preciso desenhar a setinha de novo na mão. */
