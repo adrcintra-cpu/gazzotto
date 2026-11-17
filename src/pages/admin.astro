@@ -39,7 +39,7 @@ import { supabaseConfig } from "../data/media";
     <section class="admin__login" data-view="definir-senha" hidden>
       <form class="admin__login-card" data-senha-form>
         <h1>Defina sua senha</h1>
-        <p class="admin__hint">Você foi convidado para o painel Gazzotto BBQ. Escolha uma senha de acesso.</p>
+        <p class="admin__hint">Escolha uma senha de acesso definitiva para o painel Gazzotto BBQ.</p>
         <label class="admin__field">
           <span>Nova senha</span>
           <input type="password" name="senha" autocomplete="new-password" minlength="6" required />
@@ -125,16 +125,25 @@ import { supabaseConfig } from "../data/media";
 
       <div class="admin__view" data-tab-panel="colaboradores" hidden>
         <div class="admin__toolbar">
-          <h2>Convidar colaborador</h2>
+          <h2>Adicionar colaborador</h2>
         </div>
         <p class="admin__hint">
-          A pessoa recebe um e-mail para criar a própria senha e acessar este painel. Ninguém,
-          nem este sistema, vê ou define a senha dela.
+          Não depende de e-mail. Ao adicionar, geramos uma senha provisória aqui mesmo — copie e
+          envie para a pessoa por WhatsApp (ou verbalmente). No primeiro acesso, ela é obrigada a
+          trocar por uma senha própria, que ninguém mais vê ou define.
         </p>
         <form class="admin__add-contato" data-convite-form>
           <input type="email" name="email" placeholder="E-mail do colaborador" required />
-          <button type="submit" class="btn btn--red">Enviar convite</button>
+          <button type="submit" class="btn btn--red">Adicionar e gerar senha</button>
         </form>
+        <div class="admin__senha-gerada" data-senha-gerada hidden>
+          <p>
+            Colaborador <strong data-senha-gerada-email></strong> criado. Senha provisória:
+            <code data-senha-gerada-valor></code>
+            <button type="button" class="admin__btn-ghost admin__btn-small" data-copiar-senha>Copiar</button>
+          </p>
+          <p class="admin__hint">Envie essa senha por WhatsApp agora — ela só aparece aqui uma vez.</p>
+        </div>
         <p class="admin__erro" data-convite-msg hidden></p>
 
         <div class="admin__toolbar" style="margin-top:2rem">
@@ -172,7 +181,12 @@ import { supabaseConfig } from "../data/media";
 
   // Link de convite/recuperação da Supabase chega com "type=invite" (ou "type=recovery") no
   // hash da URL — nesse caso, antes de mostrar o painel, pedimos pra pessoa criar a própria senha.
+  // O mesmo vale quando o colaborador foi criado com senha provisória (sem e-mail): o painel
+  // marca user_metadata.precisa_trocar_senha=true nesse caso, e checamos isso a cada sessão.
   let aguardandoSenha = /type=invite|type=recovery/.test(window.location.hash);
+  function precisaDefinirSenha(session) {
+    return aguardandoSenha || !!session?.user?.user_metadata?.precisa_trocar_senha;
+  }
 
   const MODALIDADE_LABELS = {
     pacote: "Cardápios Gazzotto",
@@ -216,14 +230,14 @@ import { supabaseConfig } from "../data/media";
   // ---------- Sessão ----------
   async function verificarSessao() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session && aguardandoSenha) mostrarDefinirSenha();
+    if (session && precisaDefinirSenha(session)) mostrarDefinirSenha();
     else if (session) mostrarPainel(session.user.email, session.user.id);
     else mostrarLogin();
   }
   verificarSessao();
 
   supabase.auth.onAuthStateChange((_evento, session) => {
-    if (session && aguardandoSenha) mostrarDefinirSenha();
+    if (session && precisaDefinirSenha(session)) mostrarDefinirSenha();
     else if (session) mostrarPainel(session.user.email, session.user.id);
     else mostrarLogin();
   });
@@ -238,7 +252,9 @@ import { supabaseConfig } from "../data/media";
       senhaErro.hidden = false;
       return;
     }
-    const { data, error } = await supabase.auth.updateUser({ password: senha });
+    // data: {...} também limpa a flag de senha provisória (metadata do próprio usuário —
+    // não precisa de service role, qualquer sessão pode atualizar seus próprios metadados).
+    const { data, error } = await supabase.auth.updateUser({ password: senha, data: { precisa_trocar_senha: false } });
     if (error) {
       senhaErro.textContent = "Não foi possível definir a senha: " + error.message;
       senhaErro.hidden = false;
@@ -266,7 +282,9 @@ import { supabaseConfig } from "../data/media";
     loginForm.reset();
     // Mostra o painel na hora, sem depender só do onAuthStateChange (no Safari esse aviso
     // às vezes demora/não dispara a tempo, e a tela ficava voltando pro login em branco).
-    mostrarPainel(data.user?.email, data.user?.id);
+    // Colaborador com senha provisória (primeiro login) cai na tela de definir senha, não no painel.
+    if (precisaDefinirSenha(data.session)) mostrarDefinirSenha();
+    else mostrarPainel(data.user?.email, data.user?.id);
   });
 
   // ---------- Esqueci minha senha ----------
@@ -438,34 +456,48 @@ import { supabaseConfig } from "../data/media";
 
   // ---------- Convidar colaborador ----------
   const conviteMsg = root.querySelector("[data-convite-msg]");
+  const senhaGeradaBox = root.querySelector("[data-senha-gerada]");
   root.querySelector("[data-convite-form]").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
     conviteMsg.hidden = true;
+    senhaGeradaBox.hidden = true;
     const fd = new FormData(form);
     const email = fd.get("email");
     const { data: { session } } = await supabase.auth.getSession();
     try {
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/convidar-colaborador`, {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/colaboradores`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
           apikey: SUPABASE_KEY,
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ action: "criar", email }),
       });
       const resultado = await resp.json();
-      if (!resp.ok || !resultado.ok) throw new Error(resultado.error || "falha ao enviar convite");
-      conviteMsg.textContent = `Convite enviado para ${email}.`;
-      conviteMsg.style.color = "var(--chicken)";
-      conviteMsg.hidden = false;
+      if (!resp.ok || !resultado.ok) throw new Error(resultado.error || "falha ao adicionar colaborador");
+      senhaGeradaBox.querySelector("[data-senha-gerada-email]").textContent = resultado.email;
+      senhaGeradaBox.querySelector("[data-senha-gerada-valor]").textContent = resultado.senha_provisoria;
+      senhaGeradaBox.hidden = false;
       form.reset();
       carregarColaboradores();
     } catch (err) {
-      conviteMsg.textContent = "Não foi possível enviar o convite: " + err.message;
+      conviteMsg.textContent = "Não foi possível adicionar o colaborador: " + err.message;
       conviteMsg.style.color = "var(--burger)";
       conviteMsg.hidden = false;
+    }
+  });
+
+  senhaGeradaBox.querySelector("[data-copiar-senha]").addEventListener("click", async (e) => {
+    const senha = senhaGeradaBox.querySelector("[data-senha-gerada-valor]").textContent;
+    try {
+      await navigator.clipboard.writeText(senha);
+      const original = e.target.textContent;
+      e.target.textContent = "Copiado!";
+      setTimeout(() => { e.target.textContent = original; }, 1500);
+    } catch {
+      // clipboard indisponível (ex.: contexto não seguro) -- a senha já está visível na tela.
     }
   });
 
@@ -491,10 +523,11 @@ import { supabaseConfig } from "../data/media";
       }
       body.innerHTML = lista.map((c) => {
         const souEu = c.id === meuUserId;
+        const status = c.precisa_trocar_senha ? "Senha provisória" : (c.confirmado ? "Ativo" : "Convite pendente");
         return `
         <tr data-colaborador-row="${c.id}">
           <td>${c.email}${souEu ? " (você)" : ""}</td>
-          <td>${c.confirmado ? "Ativo" : "Convite pendente"}</td>
+          <td>${status}</td>
           <td>${c.ultimo_acesso ? new Date(c.ultimo_acesso).toLocaleString("pt-BR") : "nunca acessou"}</td>
           <td>${souEu ? "" : `<button type="button" class="admin__btn-ghost admin__btn-small" data-excluir-colaborador="${c.id}">Excluir</button>`}</td>
         </tr>
@@ -583,4 +616,9 @@ import { supabaseConfig } from "../data/media";
 .admin__add-contato input { padding: .55rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; font-size: .85rem; flex: 1; min-width: 180px; }
 
 .admin__switch { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--muted); cursor: pointer; }
+
+.admin__senha-gerada { margin: -.4rem 0 1.2rem; padding: 1rem 1.2rem; border: 1px solid var(--chicken); border-radius: 10px; background: color-mix(in srgb, var(--chicken) 10%, transparent); }
+.admin__senha-gerada p { color: var(--cream); font-size: .85rem; margin: 0 0 .4rem; }
+.admin__senha-gerada p:last-child { margin-bottom: 0; }
+.admin__senha-gerada code { padding: .2rem .5rem; border-radius: 5px; background: color-mix(in srgb, var(--bg-dark) 85%, white 15%); color: var(--chicken); font-weight: 700; letter-spacing: .03em; }
 </style>
