@@ -414,11 +414,12 @@ import { supabaseConfig } from "../data/media";
       return;
     }
     grid.innerHTML = data.map((o) => `
-      <button type="button" class="admin__lead-card" data-lead-id="${o.id}">
+      <button type="button" class="admin__lead-card${o.visualizado_em ? "" : " admin__lead-card--novo"}" data-lead-id="${o.id}">
         <div class="admin__lead-card-top">
           <span class="admin__lead-card-protocolo">${esc(o.protocolo)}</span>
           <span class="admin__status admin__status--${esc(o.status)}">${STATUS_LABELS[o.status] || esc(o.status)}</span>
         </div>
+        ${o.visualizado_em ? "" : '<span class="admin__lead-card-badge">Novo</span>'}
         <h3>${esc(o.nome_responsavel)}</h3>
         <p class="admin__lead-card-info">${MODALIDADE_LABELS[o.modalidade] || esc(o.modalidade)} · ${esc(o.tipo_evento) || "-"}</p>
         <p class="admin__lead-card-info">${o.data_evento ? new Date(o.data_evento + "T00:00:00").toLocaleDateString("pt-BR") : "sem data"} · ${o.qtd_adultos || 0} adultos${o.qtd_criancas ? " + " + o.qtd_criancas + "c" : ""}</p>
@@ -456,7 +457,23 @@ import { supabaseConfig } from "../data/media";
     return pacote.pacote_regras.flatMap((r) => (r.pacote_regra_itens || []).map((ri) => ri.itens?.nome)).filter(Boolean);
   }
 
+  // Marca o lead como visto (pra todos os colaboradores) assim que alguém abre o modal.
+  // Atualiza a tela na hora e salva no banco em segundo plano, sem travar a abertura do modal.
+  async function marcarComoVisto(o) {
+    if (o.visualizado_em) return;
+    const agora = new Date().toISOString();
+    o.visualizado_em = agora;
+    const card = root.querySelector(`[data-lead-id="${o.id}"]`);
+    if (card) {
+      card.classList.remove("admin__lead-card--novo");
+      card.querySelector(".admin__lead-card-badge")?.remove();
+    }
+    const { error } = await supabase.from("orcamentos").update({ visualizado_em: agora }).eq("id", o.id);
+    if (error) console.error("erro ao marcar lead como visto:", error);
+  }
+
   function abrirLead(o) {
+    marcarComoVisto(o);
     const porContexto = {};
     (o.orcamento_itens || []).forEach((oi) => {
       const nome = oi.itens?.nome;
@@ -789,6 +806,8 @@ import { supabaseConfig } from "../data/media";
   display: flex; flex-direction: column; gap: .35rem; font: inherit;
 }
 .admin__lead-card:hover { border-color: var(--chicken); }
+.admin__lead-card--novo { border-color: var(--chicken); box-shadow: 0 0 0 1px var(--chicken); }
+.admin__lead-card-badge { align-self: flex-start; background: var(--chicken); color: var(--barbecue, #3c1518); font: 700 .65rem var(--font-body); text-transform: uppercase; letter-spacing: .04em; padding: .15rem .5rem; border-radius: 999px; }
 .admin__lead-card-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
 .admin__lead-card-protocolo { font-size: .7rem; color: var(--muted); letter-spacing: .02em; }
 .admin__lead-card h3 { font: 700 1rem var(--font-body); color: var(--cream); margin: 0; }
