@@ -141,7 +141,7 @@ import { contact, supabaseConfig } from "../data/media";
           </div>
           <label class="wiz__field" data-equipe-qtd-field hidden>
             <span>Quantidade de pessoas</span>
-            <input type="number" name="qtd_equipe_apoio" min="1" step="1" value="0" inputmode="numeric" />
+            <input type="number" name="qtd_equipe_apoio" step="1" value="0" inputmode="numeric" />
           </label>
         </fieldset>
 
@@ -545,8 +545,17 @@ import { contact, supabaseConfig } from "../data/media";
     equipeSwitch.addEventListener("change", function () {
       const quer = equipeSwitch.checked;
       equipeQtdField.hidden = !quer;
-      if (!quer) inputQtd.value = "0";
-      else if (Number(inputQtd.value || 0) <= 0) inputQtd.value = "1";
+      if (!quer) {
+        // O min="1" só pode existir enquanto o campo está visível: deixado fixo no HTML, ficava
+        // "min=1 value=0" mesmo escondido (padrão quando a pessoa nem mexe nesse switch) -- um
+        // campo inválido e não focável ao mesmo tempo, que trava o reportValidity() em alguns
+        // navegadores (Safari, principalmente) sem mostrar erro nenhum na tela.
+        inputQtd.removeAttribute("min");
+        inputQtd.value = "0";
+      } else {
+        inputQtd.min = "1";
+        if (Number(inputQtd.value || 0) <= 0) inputQtd.value = "1";
+      }
     });
   })();
 
