@@ -105,6 +105,18 @@ import { supabaseConfig } from "../data/media";
         <div class="admin__toolbar">
           <h2>Quem recebe o aviso de novo lead no WhatsApp</h2>
         </div>
+        <div class="admin__whats-status">
+          <span class="admin__whats-status-badge" data-whats-status-badge>Verificando conexão…</span>
+          <button type="button" class="admin__btn-ghost admin__btn-small" data-whats-conectar hidden>Conectar</button>
+        </div>
+        <div class="admin__whats-qr" data-whats-qr hidden>
+          <img data-whats-qr-img alt="QR Code para conectar o WhatsApp" />
+          <p class="admin__hint">
+            Abra o WhatsApp no celular que vai receber os avisos → <strong>Configurações →
+            Aparelhos conectados → Conectar um aparelho</strong> e aponte a câmera pra este QR Code.
+            Assim que conectar, esta tela atualiza sozinha.
+          </p>
+        </div>
         <p class="admin__hint">
           Cada novo pedido envia uma mensagem automática para os números ativos abaixo (via Z-API).
           Desative um contato sem precisar apagar, se for só uma pausa.
@@ -259,6 +271,7 @@ import { supabaseConfig } from "../data/media";
       carregado = true;
       carregarLeads();
       carregarContatos();
+      consultarStatusWhats(false);
       carregarContatoFormulario();
       carregarColaboradores();
     }
@@ -402,6 +415,8 @@ import { supabaseConfig } from "../data/media";
       // "Contato Formulário" não tem um modal de detalhe por item (como o Leads tem) -- então
       // marca tudo como visto ao abrir a aba, que é o momento em que a pessoa de fato olhou.
       if (tab.dataset.tab === "contato-formulario") marcarContatoFormularioComoVisto();
+      if (tab.dataset.tab === "notificacoes") consultarStatusWhats(false);
+      else pararPollWhats();
     });
   });
 
@@ -632,6 +647,72 @@ import { supabaseConfig } from "../data/media";
       carregarLeads();
     });
   }
+
+  // ---------- Status da conexão do WhatsApp (Z-API Omni) ----------
+  // Mostra se o canal está conectado e, se não estiver, busca o QR Code pra reconectar direto
+  // aqui no painel (antes era preciso entrar no site do Z-API Omni pra isso).
+  const whatsStatusBadge = root.querySelector("[data-whats-status-badge]");
+  const whatsConectarBtn = root.querySelector("[data-whats-conectar]");
+  const whatsQrBox = root.querySelector("[data-whats-qr]");
+  const whatsQrImg = root.querySelector("[data-whats-qr-img]");
+  let whatsPollTimer = null;
+
+  function pararPollWhats() {
+    if (whatsPollTimer) { clearTimeout(whatsPollTimer); whatsPollTimer = null; }
+  }
+
+  // A documentação da Z-API Omni não deixa claro se "qrcode" vem como data URI, base64 puro ou
+  // link -- cobre os três formatos pra imagem sempre aparecer, seja qual for.
+  function formatarQrSrc(qrcode) {
+    if (!qrcode || typeof qrcode !== "string") return null;
+    if (qrcode.startsWith("data:") || qrcode.startsWith("http")) return qrcode;
+    return "data:image/png;base64," + qrcode;
+  }
+
+  async function consultarStatusWhats(comQr) {
+    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-conexao`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${session.access_token}`, apikey: SUPABASE_KEY },
+      });
+      const resultado = await resp.json();
+      if (!resp.ok || !resultado.ok) throw new Error(resultado.error || "falha ao consultar conexão");
+
+      if (resultado.connected) {
+        pararPollWhats();
+        whatsStatusBadge.textContent = "🟢 WhatsApp conectado";
+        whatsStatusBadge.className = "admin__whats-status-badge admin__whats-status-badge--ok";
+        whatsConectarBtn.hidden = true;
+        whatsQrBox.hidden = true;
+        return;
+      }
+
+      whatsStatusBadge.textContent = "🔴 WhatsApp desconectado";
+      whatsStatusBadge.className = "admin__whats-status-badge admin__whats-status-badge--erro";
+      whatsConectarBtn.hidden = false;
+
+      if (comQr) {
+        const src = formatarQrSrc(resultado.qrcode);
+        if (src) {
+          whatsQrImg.src = src;
+          whatsQrBox.hidden = false;
+        }
+        // Continua consultando até a pessoa escanear (vira "connected: true") ou sair da aba.
+        whatsPollTimer = setTimeout(() => consultarStatusWhats(true), 4000);
+      }
+    } catch (err) {
+      pararPollWhats();
+      whatsStatusBadge.textContent = "Não foi possível verificar a conexão: " + err.message;
+      whatsStatusBadge.className = "admin__whats-status-badge admin__whats-status-badge--erro";
+      whatsConectarBtn.hidden = false;
+    }
+  }
+
+  whatsConectarBtn.addEventListener("click", () => {
+    whatsConectarBtn.disabled = true;
+    consultarStatusWhats(true).finally(() => { whatsConectarBtn.disabled = false; });
+  });
 
   // ---------- Notificações ----------
   async function carregarContatos() {
@@ -905,6 +986,14 @@ import { supabaseConfig } from "../data/media";
 
 .admin__add-contato { display: flex; gap: .6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
 .admin__add-contato input { padding: .55rem .75rem; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fish) 35%, transparent); background: transparent; color: var(--cream); font: inherit; font-size: .85rem; flex: 1; min-width: 180px; }
+
+.admin__whats-status { display: flex; align-items: center; gap: .9rem; margin-bottom: 1rem; }
+.admin__whats-status-badge { font: 700 .85rem var(--font-body); padding: .4rem .9rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.admin__whats-status-badge--ok { color: #2f9e5b; border-color: color-mix(in srgb, #2f9e5b 45%, transparent); background: color-mix(in srgb, #2f9e5b 12%, transparent); }
+.admin__whats-status-badge--erro { color: var(--burger); border-color: color-mix(in srgb, var(--burger) 45%, transparent); background: color-mix(in srgb, var(--burger) 12%, transparent); }
+.admin__whats-qr { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem; margin: 0 0 1.2rem; padding: 1.2rem; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--bg-dark) 85%, white 15%); }
+.admin__whats-qr img { width: 200px; height: 200px; border-radius: 8px; background: #fff; padding: .5rem; flex: none; }
+.admin__whats-qr .admin__hint { flex: 1 1 220px; margin: 0; }
 
 .admin__switch { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--muted); cursor: pointer; }
 
