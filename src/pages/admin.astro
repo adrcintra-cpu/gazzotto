@@ -890,15 +890,20 @@ import { supabaseConfig } from "../data/media";
         body.innerHTML = '<tr><td colspan="4" class="admin__loading">Nenhum colaborador encontrado.</td></tr>';
         return;
       }
+      // gazzottobbq@gmail.com é a conta principal da Gazzotto (dona do negócio) -- protegida
+      // contra exclusão por qualquer colaborador, igual já acontece com a própria conta de
+      // quem está logado, pra nunca correr o risco de alguém ficar sem acesso nenhum ao painel.
+      const CONTA_PROTEGIDA = "gazzottobbq@gmail.com";
       body.innerHTML = lista.map((c) => {
         const souEu = c.id === meuUserId;
+        const protegida = souEu || (c.email || "").toLowerCase() === CONTA_PROTEGIDA;
         const status = c.precisa_trocar_senha ? "Senha provisória" : (c.confirmado ? "Ativo" : "Convite pendente");
         return `
         <tr data-colaborador-row="${c.id}">
           <td>${c.email}${souEu ? " (você)" : ""}</td>
           <td>${status}</td>
           <td>${c.ultimo_acesso ? new Date(c.ultimo_acesso).toLocaleString("pt-BR") : "nunca acessou"}</td>
-          <td>${souEu ? "" : `<button type="button" class="admin__btn-ghost admin__btn-small" data-excluir-colaborador="${c.id}">Excluir</button>`}</td>
+          <td>${protegida ? "" : `<button type="button" class="admin__btn-ghost admin__btn-small" data-excluir-colaborador="${c.id}">Excluir</button>`}</td>
         </tr>
       `;
       }).join("");
